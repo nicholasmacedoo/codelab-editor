@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { ProjetoService } from '@/lib/projeto-service'
 import { Projeto } from '@/lib/supabase'
 import { useRealtimeProjetos } from '@/hooks/useRealtimeProjetos'
@@ -49,6 +50,7 @@ export function GerenciadorProjetos({ onSelecionarProjeto, onNovoProjeto, onClos
     visibility: 'public' as 'public' | 'unlisted' | 'private',
     allow_edits: false
   })
+  const { user } = useAuth()
 
   useEffect(() => {
     carregarProjetos()
@@ -58,15 +60,20 @@ export function GerenciadorProjetos({ onSelecionarProjeto, onNovoProjeto, onClos
   const { realtimeDisponivel } = useRealtimeProjetos({
     projetos,
     setProjetos,
-    monitorarPublicos: true
+    monitorarPublicos: false
   })
 
   const carregarProjetos = async () => {
     try {
       setCarregando(true)
       setErro(null)
-      const resultado = await ProjetoService.listarProjetosPublicos()
-      setProjetos(resultado.projetos)
+      if (!user) {
+        setErro('Faça login para visualizar seus projetos')
+        setProjetos([])
+      } else {
+        const resultado = await ProjetoService.listarProjetosDoUsuario(user.id)
+        setProjetos(resultado.projetos)
+      }
     } catch (error) {
       console.error('Erro ao carregar projetos:', error)
       setErro('Erro ao carregar projetos. Tente novamente.')
@@ -84,8 +91,13 @@ export function GerenciadorProjetos({ onSelecionarProjeto, onNovoProjeto, onClos
     try {
       setCarregando(true)
       setErro(null)
-      const resultados = await ProjetoService.pesquisarProjetos(termo)
-      setProjetos(resultados)
+      if (!user) {
+        setErro('Faça login para pesquisar seus projetos')
+        setProjetos([])
+      } else {
+        const resultados = await ProjetoService.pesquisarProjetosDoUsuario(termo, user.id)
+        setProjetos(resultados)
+      }
     } catch (error) {
       console.error('Erro ao pesquisar projetos:', error)
       setErro('Erro ao pesquisar projetos. Tente novamente.')
@@ -96,7 +108,10 @@ export function GerenciadorProjetos({ onSelecionarProjeto, onNovoProjeto, onClos
 
   const criarNovoProjeto = async () => {
     try {
-      const novoProjeto = await ProjetoService.criarProjeto(novoProjetoForm)
+      const novoProjeto = await ProjetoService.criarProjeto({
+        ...novoProjetoForm,
+        user_id: user?.id || null
+      })
       setProjetos(prev => [novoProjeto, ...prev])
       setDialogNovoAberto(false)
       setNovoProjetoForm({
@@ -282,7 +297,7 @@ export function GerenciadorProjetos({ onSelecionarProjeto, onNovoProjeto, onClos
           </div>
         </div>
 
-        {/* Lista de projetos */}
+        {/* Lista de projetos (apenas do usuário autenticado) */}
         <div className="flex-1 overflow-auto p-4">
           {erro && (
             <div className="bg-destructive/20 text-destructive border border-destructive/30 rounded-lg p-4 mb-4">
@@ -298,7 +313,7 @@ export function GerenciadorProjetos({ onSelecionarProjeto, onNovoProjeto, onClos
             <div className="flex flex-col items-center justify-center h-32 text-center">
               <Code className="w-12 h-12 text-muted-foreground mb-2" />
               <p className="text-muted-foreground">
-                {termoPesquisa ? 'Nenhum projeto encontrado' : 'Nenhum projeto disponível'}
+                {user ? (termoPesquisa ? 'Nenhum projeto encontrado' : 'Nenhum projeto disponível') : 'Faça login para visualizar seus projetos'}
               </p>
             </div>
           ) : (

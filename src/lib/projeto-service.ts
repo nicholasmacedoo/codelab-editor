@@ -95,6 +95,59 @@ export class ProjetoService {
   }
 
   /**
+   * Lista projetos do usuário autenticado (paginado)
+   */
+  static async listarProjetosDoUsuario(
+    userId: string,
+    pagina: number = 0,
+    limite: number = 20
+  ): Promise<{ projetos: Projeto[]; total: number }> {
+    const client = this.verificarSupabase()
+    const inicio = pagina * limite
+
+    const { data, error, count } = await client
+      .from('projects')
+      .select('*', { count: 'exact' })
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .range(inicio, inicio + limite - 1)
+
+    if (error) {
+      throw new Error(`Erro ao listar projetos do usuário: ${error.message}`)
+    }
+
+    return {
+      projetos: data || [],
+      total: count || 0
+    }
+  }
+
+  /**
+   * Pesquisa projetos do usuário por termo
+   */
+  static async pesquisarProjetosDoUsuario(
+    termo: string,
+    userId: string,
+    limite: number = 10
+  ): Promise<Projeto[]> {
+    const client = this.verificarSupabase()
+
+    const { data, error } = await client
+      .from('projects')
+      .select('*')
+      .eq('user_id', userId)
+      .or(`title.ilike.%${termo}%,code.ilike.%${termo}%`)
+      .order('updated_at', { ascending: false })
+      .limit(limite)
+
+    if (error) {
+      throw new Error(`Erro ao pesquisar projetos do usuário: ${error.message}`)
+    }
+
+    return data || []
+  }
+
+  /**
    * Atualiza um projeto existente
    */
   /**
