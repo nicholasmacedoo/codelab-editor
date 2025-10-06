@@ -11,6 +11,7 @@ interface ConsolePanelProps {
   isExecuting?: boolean
   executionTime?: number
   className?: string
+  compact?: boolean
 }
 
 type FilterType = 'all' | 'log' | 'info' | 'warn' | 'error'
@@ -20,7 +21,8 @@ export function ConsolePanel({
   onClear, 
   isExecuting = false,
   executionTime,
-  className = '' 
+  className = '',
+  compact = false
 }: ConsolePanelProps) {
   const [filter, setFilter] = useState<FilterType>('all')
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
@@ -104,7 +106,7 @@ export function ConsolePanel({
   return (
     <div className={`flex flex-col h-full bg-card border-t border-border ${className}`}>
       {/* Header do Console */}
-      <div className="flex items-center justify-between p-3 border-b border-border bg-muted/20">
+      <div className={`p-3 border-b border-border bg-muted/20 ${compact ? 'flex flex-col gap-2' : 'flex items-center justify-between'}`}>
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-medium text-foreground">Console</h3>
           {isExecuting && (
@@ -120,7 +122,7 @@ export function ConsolePanel({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className={`flex items-center gap-2 ${compact ? 'flex-wrap' : ''}`}>
           {/* Filtros */}
           <div className="flex items-center gap-1">
             {(['all', 'log', 'info', 'warn', 'error'] as FilterType[]).map(filterType => (

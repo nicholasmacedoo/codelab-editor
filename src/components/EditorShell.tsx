@@ -12,7 +12,7 @@ import { Projeto } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Play, Square, Save, Plus, Share2, Wifi, WifiOff, FolderOpen, Activity, LogIn } from 'lucide-react'
+import { Play, Square, Save, Plus, Share2, Wifi, WifiOff, FolderOpen, Activity, LogIn, PanelRight, PanelBottom } from 'lucide-react'
 import { ModalPermissoes, ConfiguracaoCompartilhamento } from '@/components/ModalPermissoes'
 import { UserMenu } from '@/components/UserMenu'
 import { toast } from 'sonner'
@@ -39,6 +39,127 @@ export function EditorShell() {
   // Estados de autenticação
   const { user, loading: authLoading } = useAuth()
   const [mostrarAuthModal, setMostrarAuthModal] = useState(false)
+  
+  // Layout e resize do editor/console
+  const [layoutMode, setLayoutMode] = useState<'right' | 'bottom'>('right')
+  const [consoleSize, setConsoleSize] = useState<number>(500) // px padrão quando lateral
+  const [isResizing, setIsResizing] = useState(false)
+  const resizeStartPos = useRef<number>(0)
+  const resizeStartSize = useRef<number>(500)
+  const splitRef = useRef<HTMLDivElement | null>(null)
+  const [consoleCollapsed, setConsoleCollapsed] = useState(false)
+
+  const startResize = useCallback((e: React.MouseEvent) => {
+    setIsResizing(true)
+    resizeStartPos.current = layoutMode === 'right' ? e.clientX : e.clientY
+    resizeStartSize.current = consoleSize
+    // Prevenir seleção de texto durante o drag
+    document.body.style.cursor = layoutMode === 'right' ? 'col-resize' : 'row-resize'
+    document.body.style.userSelect = 'none'
+  }, [layoutMode, consoleSize])
+
+  const onMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing) return
+    const currentPos = layoutMode === 'right' ? e.clientX : e.clientY
+    const delta = currentPos - resizeStartPos.current
+    // Para layout lateral (right), aumentar ao arrastar para a esquerda (delta negativo)
+    const newSize = layoutMode === 'right'
+      ? Math.max(500, Math.min(800, resizeStartSize.current - delta))
+      : Math.max(160, Math.min(600, resizeStartSize.current - delta))
+    setConsoleSize(newSize)
+  }, [isResizing, layoutMode])
+
+  const stopResize = useCallback(() => {
+    if (!isResizing) return
+    setIsResizing(false)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+  }, [isResizing])
+
+  useEffect(() => {
+    if (!isResizing) return
+    const handleMove = (e: MouseEvent) => onMouseMove(e)
+    const handleUp = () => stopResize()
+    window.addEventListener('mousemove', handleMove)
+    window.addEventListener('mouseup', handleUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMove)
+      window.removeEventListener('mouseup', handleUp)
+    }
+  }, [isResizing, onMouseMove, stopResize])
+
+  const reopenConsoleWithDefault = useCallback((mode: 'right' | 'bottom') => {
+    const defaultSize = mode === 'right' ? 500 : 240
+    setConsoleSize(defaultSize)
+    resizeStartSize.current = defaultSize
+    setConsoleCollapsed(false)
+    try {
+      const key = mode === 'right' ? 'labcode.consoleSize.right' : 'labcode.consoleSize.bottom'
+      localStorage.setItem(key, String(defaultSize))
+    } catch {}
+  }, [])
+
+  // Inicializar preferências do layout/size do localStorage
+  useEffect(() => {
+    try {
+      const savedLayout = localStorage.getItem('labcode.layoutMode')
+      if (savedLayout === 'right' || savedLayout === 'bottom') {
+        setLayoutMode(savedLayout as 'right' | 'bottom')
+      }
+      const key = savedLayout === 'bottom' ? 'labcode.consoleSize.bottom' : 'labcode.consoleSize.right'
+      const savedSizeStr = localStorage.getItem(key)
+      if (savedSizeStr) {
+        const savedSize = parseInt(savedSizeStr)
+        if (!Number.isNaN(savedSize)) {
+          const adjusted = (savedLayout === 'bottom')
+            ? Math.max(160, Math.min(600, savedSize))
+            : Math.max(500, Math.min(800, savedSize))
+          setConsoleSize(adjusted)
+          resizeStartSize.current = adjusted
+        }
+      } else {
+        // Default quando lateral
+        if (!savedLayout || savedLayout === 'right') {
+          setConsoleSize(500)
+          resizeStartSize.current = 500
+        }
+      }
+    } catch {}
+  }, [])
+
+  // Persistir layout
+  useEffect(() => {
+    try {
+      localStorage.setItem('labcode.layoutMode', layoutMode)
+    } catch {}
+  }, [layoutMode])
+
+  // Ao mudar layout, ajustar tamanho e carregar último usado
+  useEffect(() => {
+    try {
+      if (layoutMode === 'right') {
+        const rightStr = localStorage.getItem('labcode.consoleSize.right')
+        const size = rightStr ? parseInt(rightStr) : consoleSize
+        const adjusted = Math.max(500, Math.min(800, Number.isNaN(size) ? 500 : size))
+        setConsoleSize(adjusted)
+        resizeStartSize.current = adjusted
+      } else {
+        const bottomStr = localStorage.getItem('labcode.consoleSize.bottom')
+        const size = bottomStr ? parseInt(bottomStr) : consoleSize
+        const adjusted = Math.max(160, Math.min(600, Number.isNaN(size) ? 240 : size))
+        setConsoleSize(adjusted)
+        resizeStartSize.current = adjusted
+      }
+    } catch {}
+  }, [layoutMode])
+
+  // Persistir tamanho conforme o layout atual
+  useEffect(() => {
+    try {
+      const key = layoutMode === 'right' ? 'labcode.consoleSize.right' : 'labcode.consoleSize.bottom'
+      localStorage.setItem(key, String(consoleSize))
+    } catch {}
+  }, [consoleSize, layoutMode])
   
   // Referência para controle de sincronização em tempo real
   const realtimeUnsubscribeRef = useRef<(() => void) | null>(null)
@@ -387,15 +508,17 @@ export function EditorShell() {
             <div className="flex items-center space-x-3">
               {/* Botões de ação */}
               <div className="flex items-center space-x-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setMostrarGerenciador(true)}
-                  className="text-gray-300 hover:text-white hover:bg-gray-700"
-                >
-                  <FolderOpen className="w-4 h-4 mr-2" />
-                  Projetos
-                </Button>
+                {user && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMostrarGerenciador(true)}
+                    className="text-gray-300 hover:text-white hover:bg-gray-700"
+                  >
+                    <FolderOpen className="w-4 h-4 mr-2" />
+                    Projetos
+                  </Button>
+                )}
                 
                 <Button
                   variant="ghost"
@@ -442,9 +565,9 @@ export function EditorShell() {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className={`flex-1 flex overflow-hidden ${layoutMode === 'right' ? 'flex-row' : 'flex-col'}`} ref={splitRef}>
         {/* Editor */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
           <div className="border-b p-2 bg-muted/30 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -474,11 +597,70 @@ export function EditorShell() {
                 </Button>
               </div>
               
-              {executionTime !== undefined && (
-                <div className="px-3 py-1 bg-success/20 text-success border border-success/30 rounded-md text-xs font-medium">
-                  ✓ Executado em {executionTime}ms
+              <div className="flex items-center gap-2">
+                {/* Alternar posição do console */}
+                <div className="flex items-center gap-1 rounded-md border border-border bg-muted/30 p-1">
+                  <Button
+                    variant={layoutMode === 'right' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`h-7 px-2 ${layoutMode === 'right' ? 'bg-primary text-primary-foreground' : ''}`}
+                    onClick={() => {
+                      setLayoutMode('right')
+                      if (consoleCollapsed) {
+                        reopenConsoleWithDefault('right')
+                      }
+                    }}
+                    title="Mostrar console na lateral"
+                  >
+                    <PanelRight className="w-3 h-3 mr-1" />
+                    Lateral
+                  </Button>
+                  <Button
+                    variant={layoutMode === 'bottom' ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`h-7 px-2 ${layoutMode === 'bottom' ? 'bg-primary text-primary-foreground' : ''}`}
+                    onClick={() => {
+                      setLayoutMode('bottom')
+                      if (consoleCollapsed) {
+                        reopenConsoleWithDefault('bottom')
+                      }
+                    }}
+                    title="Mostrar console embaixo"
+                  >
+                    <PanelBottom className="w-3 h-3 mr-1" />
+                    Embaixo
+                  </Button>
                 </div>
-              )}
+
+                {/* Mostrar/Ocultar Console */}
+                {consoleCollapsed ? (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="h-7 px-2"
+                    onClick={() => reopenConsoleWithDefault(layoutMode)}
+                    title="Mostrar Console"
+                  >
+                    Mostrar Console
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2"
+                    onClick={() => setConsoleCollapsed(true)}
+                    title="Ocultar Console"
+                  >
+                    Ocultar Console
+                  </Button>
+                )}
+
+                {executionTime !== undefined && (
+                  <div className="px-3 py-1 bg-success/20 text-success border border-success/30 rounded-md text-xs font-medium">
+                    ✓ Executado em {executionTime}ms
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           
@@ -492,16 +674,32 @@ export function EditorShell() {
             />
           </div>
         </div>
+        
+        {/* Divisor para resize */}
+        {!consoleCollapsed && (
+          <div
+            className={layoutMode === 'right' ? 'w-1 cursor-col-resize bg-gray-700 hover:bg-gray-600' : 'h-1 w-full cursor-row-resize bg-gray-700 hover:bg-gray-600'}
+            onMouseDown={startResize}
+            role="separator"
+            aria-orientation={layoutMode === 'right' ? 'vertical' : 'horizontal'}
+          />
+        )}
 
         {/* Console */}
-        <div className="w-96 border-l flex-shrink-0">
-          <ConsolePanel
-            logs={logs}
-            onClear={limparConsole}
-            isExecuting={isExecuting}
-            executionTime={executionTime}
-          />
-        </div>
+        {!consoleCollapsed && (
+          <div
+            className={layoutMode === 'right' ? 'border-l flex-shrink-0' : 'border-t flex-shrink-0'}
+            style={layoutMode === 'right' ? { width: consoleSize, minWidth: 500 } : { height: consoleSize, minHeight: 160 }}
+          >
+            <ConsolePanel
+              logs={logs}
+              onClear={limparConsole}
+              isExecuting={isExecuting}
+              executionTime={executionTime}
+              compact={layoutMode === 'right' && consoleSize <= 560}
+            />
+          </div>
+        )}
       </div>
 
       {/* Gerenciador de Projetos */}
