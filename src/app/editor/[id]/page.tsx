@@ -52,7 +52,7 @@ export default function EditorPage() {
   const [projectName, setProjectName] = useState('')
 
   // Debounce para auto-save
-  const saveTimeoutRef = useRef<NodeJS.Timeout>()
+  const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const lastSavedRef = useRef<string>('')
 
   // Carregar projeto
@@ -109,7 +109,7 @@ export default function EditorPage() {
     setSaveStatus('saving')
     
     try {
-      let updateData: any = {
+      const updateData: Record<string, string> = {
         name: projectName
       }
 

@@ -34,7 +34,7 @@ export function WebCompleteEditor({
   const [debouncedCss, setDebouncedCss] = useState(css)
   const [debouncedJs, setDebouncedJs] = useState(js)
   
-  const debounceTimeoutRef = useRef<NodeJS.Timeout>()
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   // Debounce para preview (500ms)
   useEffect(() => {
@@ -87,6 +87,7 @@ export function WebCompleteEditor({
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleEditorDidMount = useCallback((editor: any, monaco: any) => {
     // Atalhos de teclado
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {

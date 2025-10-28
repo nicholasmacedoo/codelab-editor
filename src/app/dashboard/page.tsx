@@ -119,7 +119,7 @@ export default function DashboardPage() {
   }) => {
     setCreatingProject(true)
     try {
-      let projectData: any = {
+      const projectData: Record<string, string | boolean | undefined> = {
         name: data.name,
         type: data.type,
         description: data.description,
@@ -142,7 +142,8 @@ export default function DashboardPage() {
       // Debug: Ver dados sendo enviados
       console.log('Criando projeto com dados:', projectData)
       
-      const newProject = await ProjetoService.criarProjeto(projectData)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const newProject = await ProjetoService.criarProjeto(projectData as any)
       
       // Debug: Ver projeto retornado
       console.log('Projeto criado:', newProject)

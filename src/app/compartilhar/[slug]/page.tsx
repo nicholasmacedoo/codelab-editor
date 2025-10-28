@@ -124,7 +124,7 @@ export default function CompartilharPage() {
 
     setSaving(true)
     try {
-      const updateData: any = {}
+      const updateData: Record<string, string> = {}
       
       if (project.type === ProjectType.JAVASCRIPT) {
         updateData.js_code = localCode.js
@@ -337,7 +337,7 @@ ${localCode.jsWeb || ''}
 
       {/* Editor Content */}
       <div className={`flex-1 overflow-hidden ${!project.allow_edits ? 'pointer-events-none opacity-90' : ''}`}>
-        {project.type === 'javascript' || project.type === ProjectType.JAVASCRIPT ? (
+        {project.type === ProjectType.JAVASCRIPT ? (
           <JavaScriptEditor
             code={localCode.js}
             onChange={(newCode) => {
@@ -347,7 +347,7 @@ ${localCode.jsWeb || ''}
             }}
             onSave={project.allow_edits ? handleSave : () => {}}
           />
-        ) : project.type === 'web_complete' || project.type === ProjectType.WEB_COMPLETE ? (
+        ) : project.type === ProjectType.WEB_COMPLETE ? (
           <WebCompleteEditor
             html={localCode.html}
             css={localCode.css}

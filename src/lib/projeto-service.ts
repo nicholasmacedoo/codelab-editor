@@ -30,7 +30,7 @@ export class ProjetoService {
       user_id: dados.user_id || null
     }
 
-    let projectData: any = { ...baseData }
+    const projectData: Record<string, string | boolean | null> = { ...baseData }
 
     if (dados.type === ProjectType.JAVASCRIPT) {
       projectData.js_code = dados.js_code
@@ -256,7 +256,7 @@ export class ProjetoService {
     // Criar cópia com novo slug
     const slug = await this.gerarSlugUnico(`${original.name} (cópia)`)
     
-    const copyData: any = {
+    const copyData: Record<string, string | boolean | null> = {
       name: `${original.name} (cópia)`,
       slug,
       type: original.type,
