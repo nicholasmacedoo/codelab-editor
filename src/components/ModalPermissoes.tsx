@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -46,6 +46,16 @@ export function ModalPermissoes({
     titulo: projetoExistente ? nomeProjeto : ''
   })
 
+  // Atualizar o título quando o nome do projeto mudar
+  React.useEffect(() => {
+    if (projetoExistente && nomeProjeto) {
+      setConfiguracao(prev => ({
+        ...prev,
+        titulo: nomeProjeto
+      }))
+    }
+  }, [nomeProjeto, projetoExistente])
+
   const [linkGerado, setLinkGerado] = useState<string | null>(null)
   const [copiado, setCopiado] = useState(false)
 
@@ -53,6 +63,18 @@ export function ModalPermissoes({
 
   const handleCompartilhar = () => {
     onCompartilhar(configuracao)
+  }
+
+  const handleClose = () => {
+    // Reset do estado quando fechar o modal
+    setConfiguracao({
+      visibility: 'public',
+      allow_edits: false,
+      titulo: projetoExistente ? nomeProjeto : ''
+    })
+    setLinkGerado(null)
+    setCopiado(false)
+    onClose()
   }
 
   const copiarLink = async () => {
@@ -107,7 +129,7 @@ export function ModalPermissoes({
               </CardDescription>
             </div>
             <Button
-              onClick={onClose}
+              onClick={handleClose}
               variant="ghost"
               size="sm"
               className="hover:bg-muted"
@@ -286,7 +308,7 @@ export function ModalPermissoes({
 
           {/* Ações */}
           <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button onClick={onClose} variant="outline">
+            <Button onClick={handleClose} variant="outline">
               Cancelar
             </Button>
             <Button 
