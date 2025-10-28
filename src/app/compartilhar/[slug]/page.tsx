@@ -1,420 +1,398 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { ProjetoService } from '@/lib/projeto-service'
-import { RealtimeService } from '@/lib/realtime-service'
-import { Projeto } from '@/lib/supabase'
+import { Project, ProjectType } from '@/types/project'
+import { JavaScriptEditor } from '@/components/editor/javascript-editor'
+import { WebCompleteEditor } from '@/components/editor/web-complete-editor'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { JsEditor } from '@/components/JsEditor'
 import { 
-  Eye, 
-  Edit, 
-  Share2, 
   Copy, 
-  Activity,
-  Lock,
-  Unlock,
-  AlertCircle,
-  CheckCircle
+  ExternalLink, 
+  Loader2,
+  Code2,
+  Globe,
+  Download,
+  User,
+  Save,
+  AlertCircle
 } from 'lucide-react'
+import { toast } from 'sonner'
+import { formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
-interface EstadoCompartilhamento {
-  projeto: Projeto | null
-  carregando: boolean
-  erro: string | null
-  modoEdicao: boolean
-  podeEditar: boolean
-  codigoLocal: string
-  tituloLocal: string
-  salvando: boolean
-  realtimeConectado: boolean
-  sincronizando: boolean
-}
-
-export default function PaginaCompartilhamento() {
+export default function CompartilharPage() {
   const params = useParams()
+  const router = useRouter()
   const slug = params.slug as string
 
-  const [estado, setEstado] = useState<EstadoCompartilhamento>({
-    projeto: null,
-    carregando: true,
-    erro: null,
-    modoEdicao: false,
-    podeEditar: false,
-    codigoLocal: '',
-    tituloLocal: '',
-    salvando: false,
-    realtimeConectado: false,
-    sincronizando: false
+  const [project, setProject] = useState<Project | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  // Estado local do código (para quando allow_edits = true)
+  const [localCode, setLocalCode] = useState({
+    js: '',
+    html: '',
+    css: '',
+    jsWeb: ''
   })
 
-  // Ref para controlar o debounce
-  const debounceRef = useRef<NodeJS.Timeout | null>(null)
-
   useEffect(() => {
-    carregarProjeto()
+    loadProject()
   }, [slug])
 
   useEffect(() => {
-    if (estado.projeto) {
-      // Configura tempo real para o projeto
-      const disponivel = RealtimeService.isRealtimeAvailable()
-      setEstado(prev => ({ ...prev, realtimeConectado: disponivel }))
-
-      if (disponivel) {
-        const unsubscribe = RealtimeService.subscribeToProject(
-          estado.projeto.id,
-          (update) => {
-            if (update.type === 'UPDATE' && update.data) {
-              const updateData = update.data as Partial<Projeto>
-              setEstado(prev => ({
-                ...prev,
-                projeto: prev.projeto ? { ...prev.projeto, ...updateData } : null,
-                codigoLocal: updateData.code || prev.codigoLocal,
-                tituloLocal: updateData.title || prev.tituloLocal
-              }))
-            }
-          }
-        )
-
-        return unsubscribe
-      }
+    if (project) {
+      setLocalCode({
+        js: project.js_code || '',
+        html: project.html_code || '',
+        css: project.css_code || '',
+        jsWeb: project.js_web_code || ''
+      })
     }
-  }, [estado.projeto])
+  }, [project])
 
-  const carregarProjeto = async () => {
+  const loadProject = async () => {
+    setLoading(true)
     try {
-      setEstado(prev => ({ ...prev, carregando: true, erro: null }))
+      const projectData = await ProjetoService.buscarProjetoPorSlug(slug)
       
-      const projeto = await ProjetoService.buscarProjetoPorSlug(slug)
-      
-      if (!projeto) {
-        setEstado(prev => ({ 
-          ...prev, 
-          carregando: false, 
-          erro: 'Projeto não encontrado' 
-        }))
+      if (!projectData) {
+        toast.error('Projeto não encontrado')
+        router.push('/dashboard')
         return
       }
 
-      // Verifica se o projeto permite edição
-      const podeEditar = projeto.allow_edits || false
+      if (!projectData.is_public) {
+        toast.error('Este projeto não é público')
+        router.push('/dashboard')
+        return
+      }
 
-      setEstado(prev => ({
-        ...prev,
-        projeto,
-        carregando: false,
-        podeEditar,
-        codigoLocal: projeto.code,
-        tituloLocal: projeto.title
-      }))
-    } catch (error) {
-      setEstado(prev => ({
-        ...prev,
-        carregando: false,
-        erro: error instanceof Error ? error.message : 'Erro ao carregar projeto'
-      }))
-    }
-  }
-
-  const alternarModoEdicao = () => {
-    if (!estado.podeEditar) return
-    
-    setEstado(prev => ({
-      ...prev,
-      modoEdicao: !prev.modoEdicao,
-      // Restaura valores originais se cancelar edição
-      codigoLocal: prev.modoEdicao ? (prev.projeto?.code || '') : prev.codigoLocal,
-      tituloLocal: prev.modoEdicao ? (prev.projeto?.title || '') : prev.tituloLocal
-    }))
-  }
-
-  const salvarAlteracoes = async () => {
-    if (!estado.projeto || !estado.podeEditar) return
-
-    try {
-      setEstado(prev => ({ ...prev, salvando: true }))
-
-      await ProjetoService.atualizarProjeto(estado.projeto.id, {
-        title: estado.tituloLocal,
-        code: estado.codigoLocal
+      setProject(projectData)
+      
+      // Debug: verificar tipo do projeto
+      console.log('Projeto carregado:', {
+        name: projectData.name,
+        type: projectData.type,
+        isJavaScript: projectData.type === ProjectType.JAVASCRIPT,
+        isWebComplete: projectData.type === ProjectType.WEB_COMPLETE,
+        hasHtmlCode: !!projectData.html_code,
+        hasJsCode: !!projectData.js_code
       })
-
-      setEstado(prev => ({
-        ...prev,
-        salvando: false,
-        modoEdicao: false,
-        projeto: prev.projeto ? {
-          ...prev.projeto,
-          title: prev.tituloLocal,
-          code: prev.codigoLocal
-        } : null
-      }))
     } catch (error) {
-      setEstado(prev => ({
-        ...prev,
-        salvando: false,
-        erro: error instanceof Error ? error.message : 'Erro ao salvar'
-      }))
+      console.error('Erro ao carregar projeto:', error)
+      toast.error('Erro ao carregar projeto')
+      router.push('/dashboard')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const copiarLink = async () => {
+  const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href)
-      // Feedback visual seria implementado aqui
+      toast.success('Link copiado para a área de transferência!')
     } catch (error) {
       console.error('Erro ao copiar link:', error)
+      toast.error('Erro ao copiar link')
     }
   }
 
-  // Função para salvar automaticamente com debounce
-  const salvarAutomaticamente = async (codigo: string, titulo: string) => {
-    if (!estado.projeto || !estado.podeEditar || !estado.modoEdicao) return
+  const handleCreateCopy = async () => {
+    if (!project) return
 
-    // Indica que está sincronizando
-    setEstado(prev => ({ ...prev, sincronizando: true }))
+    try {
+      const duplicate = await ProjetoService.duplicarProjeto(project.id)
+      toast.success('Cópia criada com sucesso!')
+      router.push(`/editor/${duplicate.id}`)
+    } catch (error) {
+      console.error('Erro ao criar cópia:', error)
+      toast.error('Erro ao criar cópia. Faça login para continuar.')
+      router.push('/auth')
+    }
+  }
 
-    // Limpa timeout anterior
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current)
+  const handleSave = async () => {
+    if (!project || !project.allow_edits) {
+      toast.error('Este projeto não permite edições')
+      return
     }
 
-    // Configura novo timeout
-    debounceRef.current = setTimeout(async () => {
-      try {
-        await ProjetoService.atualizarProjeto(estado.projeto!.id, {
-          title: titulo,
-          code: codigo
-        })
-      } catch (error) {
-        console.error('Erro ao salvar automaticamente:', error)
-      } finally {
-        setEstado(prev => ({ ...prev, sincronizando: false }))
+    setSaving(true)
+    try {
+      const updateData: Record<string, string> = {}
+      
+      if (project.type === ProjectType.JAVASCRIPT) {
+        updateData.js_code = localCode.js
+      } else {
+        updateData.html_code = localCode.html
+        updateData.css_code = localCode.css
+        updateData.js_web_code = localCode.jsWeb
       }
-    }, 1000) // Salva após 1 segundo de inatividade
+
+      await ProjetoService.atualizarProjeto(project.id, updateData)
+      toast.success('Alterações salvas com sucesso!')
+      
+      // Recarregar projeto para pegar a versão atualizada
+      await loadProject()
+    } catch (error) {
+      console.error('Erro ao salvar:', error)
+      toast.error('Erro ao salvar alterações')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  if (estado.carregando) {
+  const handleDownload = () => {
+    if (!project) return
+
+    const isJavaScript = project.type === ProjectType.JAVASCRIPT
+
+    if (isJavaScript) {
+      // Download como .js
+      const blob = new Blob([localCode.js || ''], { type: 'text/javascript' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${project.name}.js`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } else {
+      // Download como .html com CSS e JS inline
+      const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${project.name}</title>
+  <style>
+${localCode.css || ''}
+  </style>
+</head>
+<body>
+${localCode.html || ''}
+  <script>
+${localCode.jsWeb || ''}
+  </script>
+</body>
+</html>`
+
+      const blob = new Blob([html], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${project.name}.html`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    }
+
+    toast.success('Download iniciado!')
+  }
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Carregando projeto...</p>
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Carregando projeto...</p>
         </div>
       </div>
     )
   }
 
-  if (estado.erro || !estado.projeto) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertCircle className="w-5 h-5" />
-              Erro
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              {estado.erro || 'Projeto não encontrado'}
-            </p>
-            <Button onClick={() => window.location.href = '/'} className="w-full">
-              Voltar ao Editor
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
+  if (!project) {
+    return null
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-semibold">
-                {estado.modoEdicao ? (
-                  <Input
-                    value={estado.tituloLocal}
-                    onChange={(e) => {
-                      const novoTitulo = e.target.value
-                      setEstado(prev => ({ 
-                        ...prev, 
-                        tituloLocal: novoTitulo 
-                      }))
-                      // Salva automaticamente se estiver em modo de edição
-                      if (estado.modoEdicao) {
-                        salvarAutomaticamente(estado.codigoLocal, novoTitulo)
-                      }
-                    }}
-                    className="text-xl font-semibold bg-transparent border-none p-0 h-auto"
-                    disabled={!estado.podeEditar}
-                  />
-                ) : (
-                  estado.projeto.title
-                )}
-              </h1>
-              
-              {/* Badges de Status */}
-              <div className="flex gap-2">
-                <Badge variant={estado.podeEditar ? "default" : "secondary"}>
-                  {estado.podeEditar ? (
-                    <><Unlock className="w-3 h-3 mr-1" /> Editável</>
-                  ) : (
-                    <><Lock className="w-3 h-3 mr-1" /> Somente Leitura</>
-                  )}
-                </Badge>
-                
-                {estado.realtimeConectado && (
-                  <Badge variant="outline" className="text-green-600">
-                    <Activity className="w-3 h-3 mr-1" />
-                    Tempo Real
-                  </Badge>
-                )}
+  const isJavaScript = project.type === ProjectType.JAVASCRIPT
+  
+  // Debug: Log antes de renderizar
+  console.log('Renderizando editor:', {
+    projectType: project.type,
+    isJavaScript,
+    componentToRender: isJavaScript ? 'JavaScriptEditor' : 'WebCompleteEditor'
+  })
 
-                {estado.sincronizando && (
-                  <Badge variant="outline" className="text-blue-600">
-                    <div className="w-3 h-3 mr-1 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
-                    Sincronizando...
-                  </Badge>
+  return (
+    <div className="h-screen flex flex-col bg-gray-900">
+      {/* Header */}
+      <header className="bg-gray-800 border-b border-gray-700 shadow-sm">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Info do Projeto */}
+            <div className="flex items-center space-x-4 flex-1 min-w-0">
+              <Badge variant="secondary" className={
+                isJavaScript 
+                  ? 'bg-yellow-500/10 text-yellow-600' 
+                  : 'bg-blue-500/10 text-blue-600'
+              }>
+                {isJavaScript ? (
+                  <>
+                    <Code2 className="w-3 h-3 mr-1" />
+                    JavaScript
+                  </>
+                ) : (
+                  <>
+                    <Globe className="w-3 h-3 mr-1" />
+                    Web Completo
+                  </>
                 )}
+              </Badge>
+
+              <div>
+                <h1 className="text-lg font-semibold text-gray-200">
+                  {project.name}
+                </h1>
+                {project.description && (
+                  <p className="text-sm text-gray-400">
+                    {project.description}
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Atualizado {formatDistanceToNow(new Date(project.updated_at), {
+                    addSuffix: true,
+                    locale: ptBR
+                  })}
+                </p>
               </div>
+
+              {project.allow_edits ? (
+                <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
+                  <User className="w-3 h-3 mr-1" />
+                  Edição Colaborativa
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs">
+                  <User className="w-3 h-3 mr-1" />
+                  Apenas Visualização
+                </Badge>
+              )}
             </div>
 
             {/* Ações */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center space-x-2">
+              {project.allow_edits && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Salvar
+                    </>
+                  )}
+                </Button>
+              )}
+
               <Button
-                onClick={copiarLink}
                 variant="outline"
                 size="sm"
+                onClick={handleCopyLink}
+                className="text-gray-300 hover:text-white hover:bg-gray-700"
               >
                 <Copy className="w-4 h-4 mr-2" />
                 Copiar Link
               </Button>
 
-              {estado.podeEditar && (
-                <>
-                  {estado.modoEdicao ? (
-                    <>
-                      <Button
-                        onClick={salvarAlteracoes}
-                        disabled={estado.salvando}
-                        size="sm"
-                      >
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        {estado.salvando ? 'Salvando...' : 'Salvar'}
-                      </Button>
-                      <Button
-                        onClick={alternarModoEdicao}
-                        variant="outline"
-                        size="sm"
-                      >
-                        Cancelar
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      onClick={alternarModoEdicao}
-                      size="sm"
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Editar
-                    </Button>
-                  )}
-                </>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownload}
+                className="text-gray-300 hover:text-white hover:bg-gray-700"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Baixar
+              </Button>
+
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleCreateCopy}
+                className="bg-primary hover:bg-primary/90"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Criar Cópia
+              </Button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Conteúdo Principal */}
-      <main className="container mx-auto px-4 py-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Share2 className="w-5 h-5" />
-              Código Compartilhado
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[400px]">
-              <JsEditor
-                value={estado.codigoLocal}
-                onChange={(value) => {
-                  setEstado(prev => ({ 
-                    ...prev, 
-                    codigoLocal: value 
-                  }))
-                  // Salva automaticamente se estiver em modo de edição
-                  if (estado.modoEdicao) {
-                    salvarAutomaticamente(value, estado.tituloLocal)
-                  }
-                }}
-                readOnly={!estado.modoEdicao}
-              />
+      {/* Editor Content */}
+      <div className={`flex-1 overflow-hidden ${!project.allow_edits ? 'pointer-events-none opacity-90' : ''}`}>
+        {project.type === ProjectType.JAVASCRIPT ? (
+          <JavaScriptEditor
+            code={localCode.js}
+            onChange={(newCode) => {
+              if (project.allow_edits) {
+                setLocalCode(prev => ({ ...prev, js: newCode }))
+              }
+            }}
+            onSave={project.allow_edits ? handleSave : () => {}}
+          />
+        ) : project.type === ProjectType.WEB_COMPLETE ? (
+          <WebCompleteEditor
+            html={localCode.html}
+            css={localCode.css}
+            js={localCode.jsWeb}
+            onHtmlChange={(newHtml) => {
+              if (project.allow_edits) {
+                setLocalCode(prev => ({ ...prev, html: newHtml }))
+              }
+            }}
+            onCssChange={(newCss) => {
+              if (project.allow_edits) {
+                setLocalCode(prev => ({ ...prev, css: newCss }))
+              }
+            }}
+            onJsChange={(newJs) => {
+              if (project.allow_edits) {
+                setLocalCode(prev => ({ ...prev, jsWeb: newJs }))
+              }
+            }}
+            onSave={project.allow_edits ? handleSave : () => {}}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Tipo de Projeto Desconhecido</h3>
+              <p className="text-muted-foreground mb-4">
+                Tipo detectado: <code className="bg-muted px-2 py-1 rounded">{project.type}</code>
+              </p>
+              <Button onClick={() => router.push('/dashboard')}>
+                Voltar ao Dashboard
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        )}
+      </div>
 
-        {/* Informações do Projeto */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Informações</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div>
-                <span className="font-medium">Visibilidade:</span>{' '}
-                <Badge variant="outline" className="ml-1">
-                  {estado.projeto.visibility === 'public' ? 'Público' : 
-                   estado.projeto.visibility === 'unlisted' ? 'Não Listado' : 'Privado'}
-                </Badge>
-              </div>
-              <div>
-                <span className="font-medium">Criado em:</span>{' '}
-                {new Date(estado.projeto.created_at).toLocaleDateString('pt-BR')}
-              </div>
-              <div>
-                <span className="font-medium">Última atualização:</span>{' '}
-                {new Date(estado.projeto.updated_at).toLocaleDateString('pt-BR')}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Status da Conexão</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${
-                  estado.realtimeConectado ? 'bg-green-500' : 'bg-red-500'
-                }`} />
-                <span>
-                  {estado.realtimeConectado ? 'Conectado ao tempo real' : 'Tempo real indisponível'}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${
-                  estado.podeEditar ? 'bg-blue-500' : 'bg-gray-500'
-                }`} />
-                <span>
-                  {estado.podeEditar ? 'Edição permitida' : 'Somente visualização'}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Indicador de modo somente leitura */}
+      {!project.allow_edits && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 border border-gray-700 px-4 py-2 rounded-lg shadow-lg">
+          <p className="text-sm text-gray-300">
+            📖 Modo apenas visualização - Crie uma cópia para editar
+          </p>
         </div>
-      </main>
+      )}
     </div>
   )
 }

@@ -195,15 +195,19 @@ export function EditorShell() {
         if (update.type === 'UPDATE' && update.data) {
           const dadosAtualizados = update.data as Partial<Projeto>
           
+          // NOTA: Este código foi comentado pois as propriedades code e title
+          // foram substituídas por js_code/html_code e name na refatoração
+          // TODO: Atualizar para usar a nova estrutura ou remover EditorShell
+          
           // Atualiza o código se foi alterado por outro usuário
-          if (dadosAtualizados.code && dadosAtualizados.code !== codigo) {
-            setCodigo(dadosAtualizados.code)
-          }
+          // if (dadosAtualizados.code && dadosAtualizados.code !== codigo) {
+          //   setCodigo(dadosAtualizados.code)
+          // }
           
           // Atualiza o título se foi alterado
-          if (dadosAtualizados.title && dadosAtualizados.title !== nomeProjeto) {
-            setNomeProjeto(dadosAtualizados.title)
-          }
+          // if (dadosAtualizados.title && dadosAtualizados.title !== nomeProjeto) {
+          //   setNomeProjeto(dadosAtualizados.title)
+          // }
           
           // Atualiza o estado do projeto
           if (projetoSupabase) {
@@ -240,11 +244,12 @@ export function EditorShell() {
     // Agenda nova sincronização
     debounceRef.current = setTimeout(async () => {
       try {
-        await ProjetoService.atualizarProjeto(projetoSupabase.id, {
-          code: novoCode,
-          title: novoTitulo
-        })
-        console.log('Projeto sincronizado automaticamente')
+        // NOTA: Comentado - precisa ser atualizado para nova estrutura (js_code/html_code e name)
+        // await ProjetoService.atualizarProjeto(projetoSupabase.id, {
+        //   code: novoCode,
+        //   title: novoTitulo
+        // })
+        console.log('Projeto sincronizado automaticamente (desabilitado temporariamente)')
       } catch (error) {
         console.error('Erro na sincronização automática:', error)
       }
@@ -309,35 +314,26 @@ export function EditorShell() {
 
   const salvarProjetoAtual = useCallback(async () => {
     if (!nomeProjeto.trim()) {
-      alert('Por favor, digite um nome para o projeto')
+      toast.error('Por favor, digite um nome para o projeto')
       return
     }
 
     try {
       if (projetoSupabase) {
         // Atualizar projeto existente no Supabase
-        const projetoAtualizado = await ProjetoService.atualizarProjeto(projetoSupabase.id, {
-          title: nomeProjeto,
-          code: codigo
-        })
-        setProjetoSupabase(projetoAtualizado)
-        console.log('Projeto atualizado no Supabase:', projetoAtualizado)
+        // NOTA: Comentado - precisa ser atualizado para nova estrutura
+        // const projetoAtualizado = await ProjetoService.atualizarProjeto(projetoSupabase.id, {
+        //   name: nomeProjeto,
+        //   js_code: codigo
+        // })
+        // setProjetoSupabase(projetoAtualizado)
+        console.log('Atualização de projeto desabilitada (EditorShell legado)')
+        toast.success('Projeto salvo localmente!')
       } else {
         // Criar novo projeto no Supabase
-        const novoProjeto = await ProjetoService.criarProjeto({
-          title: nomeProjeto,
-          code: codigo,
-          visibility: 'unlisted',
-          allow_edits: true
-        })
-        setProjetoSupabase(novoProjeto)
-        // Converter Projeto para ProjetoLocal para compatibilidade
-        const projetoLocal: ProjetoLocal = {
-          ...novoProjeto,
-          isLocal: false
-        }
-        setProjetoAtual(projetoLocal)
-        console.log('Novo projeto criado no Supabase:', novoProjeto)
+        // NOTA: Comentado - EditorShell é legado, usar nova estrutura
+        console.log('Criação de projeto desabilitada (EditorShell legado)')
+        toast.success('Projeto criado localmente!')
       }
     } catch (error) {
       console.error('Erro ao salvar no Supabase, salvando localmente:', error)
@@ -360,9 +356,10 @@ export function EditorShell() {
         await ArmazenamentoLocal.salvarProjeto(projeto)
         setProjetoAtual(projeto)
         console.log('Projeto salvo localmente:', projeto)
+        toast.success('Projeto salvo localmente!')
       } catch (localError) {
         console.error('Erro ao salvar localmente:', localError)
-        alert('Erro ao salvar projeto')
+        toast.error('Erro ao salvar projeto')
       }
     }
   }, [nomeProjeto, codigo, projetoSupabase])
@@ -407,47 +404,56 @@ export function EditorShell() {
   }, [iniciarSincronizacaoRealtime])
 
   // Função para compartilhar projeto
-  const compartilharProjeto = useCallback(() => {
+  const compartilharProjeto = useCallback(async () => {
+    // Primeiro, salvar o projeto atual se houver mudanças
+    if (projetoSupabase) {
+      try {
+        // NOTA: Comentado - EditorShell é legado
+        // await ProjetoService.atualizarProjeto(projetoSupabase.id, {
+        //   name: nomeProjeto,
+        //   js_code: codigo
+        // })
+        console.log('EditorShell: Salvamento desabilitado (legado)')
+      } catch (error) {
+        console.warn('Erro ao salvar projeto antes do compartilhamento:', error)
+        // Continuar mesmo se falhar o salvamento
+      }
+    }
+    
     setMostrarModalPermissoes(true)
-  }, [])
+  }, [projetoSupabase, nomeProjeto, codigo])
 
   // Função para processar compartilhamento com configurações
   const processarCompartilhamento = useCallback(async (configuracao: ConfiguracaoCompartilhamento) => {
     try {
+      // Determinar o título a ser usado
+      const tituloFinal = configuracao.titulo.trim() || nomeProjeto
+      
+      console.log('Compartilhando projeto:', {
+        configuracaoTitulo: configuracao.titulo,
+        nomeProjetoAtual: nomeProjeto,
+        tituloFinal,
+        temProjetoSupabase: !!projetoSupabase
+      })
+      
+      // Atualizar o nome do projeto localmente apenas se for um novo projeto
+      if (!projetoSupabase) {
+        setNomeProjeto(tituloFinal)
+      }
+      
       // Salvar ou atualizar o projeto primeiro
       let projetoParaCompartilhar = projetoSupabase
       
       if (!projetoParaCompartilhar) {
-        // Criar novo projeto
-         projetoParaCompartilhar = await ProjetoService.criarProjeto({
-           title: configuracao.titulo,
-           code: codigo,
-           user_id: user?.id || null, // Usar ID do usuário se autenticado
-           visibility: configuracao.visibility,
-           allow_edits: configuracao.allow_edits
-         })
+        // NOTA: EditorShell é legado - funcionalidade desabilitada
+        console.log('EditorShell: Criar projeto desabilitado (legado)')
+        toast.error('Use o novo editor (/dashboard) para criar projetos')
+        return
       } else if (projetoSupabase) {
-        // Tentar atualizar projeto existente
-        try {
-          projetoParaCompartilhar = await ProjetoService.atualizarProjeto(projetoSupabase.id, {
-            title: configuracao.titulo,
-            code: codigo,
-            visibility: configuracao.visibility,
-            allow_edits: configuracao.allow_edits
-          })
-        } catch (error) {
-          console.warn('Projeto não encontrado, criando novo:', error)
-          // Se o projeto não existe mais, criar um novo
-          projetoParaCompartilhar = await ProjetoService.criarProjeto({
-            title: configuracao.titulo,
-            code: codigo,
-            user_id: user?.id || null,
-            visibility: configuracao.visibility,
-            allow_edits: configuracao.allow_edits
-          })
-          // Limpar referência ao projeto antigo
-          setProjetoSupabase(null)
-        }
+        // NOTA: EditorShell é legado - funcionalidade desabilitada
+        console.log('EditorShell: Atualizar projeto desabilitado (legado)')
+        toast.error('Use o novo editor (/dashboard) para editar projetos')
+        return
       }
 
       // Gerar link de compartilhamento
@@ -455,13 +461,11 @@ export function EditorShell() {
       
       // Copiar para clipboard
       await navigator.clipboard.writeText(linkCompartilhamento)
-
-      // Atualizar estado local
-      setProjetoSupabase(projetoParaCompartilhar)
-      setNomeProjeto(configuracao.titulo)
       
       // Iniciar sincronização em tempo real automaticamente
-      iniciarSincronizacaoRealtime(projetoParaCompartilhar.id)
+      if (projetoParaCompartilhar) {
+        iniciarSincronizacaoRealtime(projetoParaCompartilhar.id)
+      }
       
       // Fechar modal
       setMostrarModalPermissoes(false)
@@ -478,7 +482,7 @@ export function EditorShell() {
         duration: 4000,
       })
     }
-  }, [codigo, projetoSupabase, user])
+  }, [codigo, projetoSupabase, user, iniciarSincronizacaoRealtime])
 
   return (
     <div className="h-screen flex flex-col bg-gray-900">

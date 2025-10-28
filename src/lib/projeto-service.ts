@@ -1,5 +1,5 @@
-import { supabase, supabaseAdmin, Projeto, VersaoProjeto } from './supabase'
-import { nanoid } from 'nanoid'
+import { supabase, Project } from './supabase'
+import { CreateProjectData, UpdateProjectData, ProjectType } from '@/types/project'
 
 export class ProjetoService {
   /**
@@ -15,26 +15,34 @@ export class ProjetoService {
   /**
    * Cria um novo projeto no Supabase
    */
-  static async criarProjeto(dados: {
-    title: string
-    code: string
-    visibility?: 'public' | 'unlisted' | 'private'
-    allow_edits?: boolean
-    user_id?: string | null
-  }): Promise<Projeto> {
+  static async criarProjeto(dados: CreateProjectData): Promise<Project> {
     const client = this.verificarSupabase()
-    const slug = await this.gerarSlugUnico(dados.title)
+    const slug = await this.gerarSlugUnico(dados.name)
+
+    // Preparar dados baseados no tipo de projeto
+    const baseData = {
+      name: dados.name,
+      slug,
+      type: dados.type,
+      description: dados.description || null,
+      is_public: dados.is_public || false,
+      allow_edits: dados.allow_edits || false,
+      user_id: dados.user_id || null
+    }
+
+    const projectData: Record<string, string | boolean | null> = { ...baseData }
+
+    if (dados.type === ProjectType.JAVASCRIPT) {
+      projectData.js_code = dados.js_code
+    } else if (dados.type === ProjectType.WEB_COMPLETE) {
+      projectData.html_code = dados.html_code
+      projectData.css_code = dados.css_code || ''
+      projectData.js_web_code = dados.js_web_code || ''
+    }
 
     const { data, error } = await client
       .from('projects')
-      .insert({
-        title: dados.title,
-        code: dados.code,
-        slug,
-        visibility: dados.visibility || 'public',
-        allow_edits: dados.allow_edits || true,
-        user_id: dados.user_id || null
-      })
+      .insert(projectData)
       .select()
       .single()
 
@@ -42,13 +50,13 @@ export class ProjetoService {
       throw new Error(`Erro ao criar projeto: ${error.message}`)
     }
 
-    return data
+    return data as Project
   }
 
   /**
    * Busca um projeto pelo slug
    */
-  static async buscarProjetoPorSlug(slug: string): Promise<Projeto | null> {
+  static async buscarProjetoPorSlug(slug: string): Promise<Project | null> {
     const client = this.verificarSupabase()
     
     const { data, error } = await client
@@ -64,7 +72,29 @@ export class ProjetoService {
       throw new Error(`Erro ao buscar projeto: ${error.message}`)
     }
 
-    return data
+    return data as Project
+  }
+
+  /**
+   * Busca um projeto pelo ID
+   */
+  static async buscarProjetoPorId(id: string): Promise<Project | null> {
+    const client = this.verificarSupabase()
+    
+    const { data, error } = await client
+      .from('projects')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null // Projeto não encontrado
+      }
+      throw new Error(`Erro ao buscar projeto: ${error.message}`)
+    }
+
+    return data as Project
   }
 
   /**
@@ -72,15 +102,22 @@ export class ProjetoService {
    */
   static async listarProjetosPublicos(
     pagina: number = 0,
-    limite: number = 20
-  ): Promise<{ projetos: Projeto[]; total: number }> {
+    limite: number = 20,
+    tipo?: ProjectType
+  ): Promise<{ projetos: Project[]; total: number }> {
     const client = this.verificarSupabase()
     const inicio = pagina * limite
 
-    const { data, error, count } = await client
+    let query = client
       .from('projects')
       .select('*', { count: 'exact' })
-      .eq('visibility', 'public')
+      .eq('is_public', true)
+
+    if (tipo) {
+      query = query.eq('type', tipo)
+    }
+
+    const { data, error, count } = await query
       .order('updated_at', { ascending: false })
       .range(inicio, inicio + limite - 1)
 
@@ -89,7 +126,7 @@ export class ProjetoService {
     }
 
     return {
-      projetos: data || [],
+      projetos: (data as Project[]) || [],
       total: count || 0
     }
   }
@@ -100,15 +137,22 @@ export class ProjetoService {
   static async listarProjetosDoUsuario(
     userId: string,
     pagina: number = 0,
-    limite: number = 20
-  ): Promise<{ projetos: Projeto[]; total: number }> {
+    limite: number = 20,
+    tipo?: ProjectType
+  ): Promise<{ projetos: Project[]; total: number }> {
     const client = this.verificarSupabase()
     const inicio = pagina * limite
 
-    const { data, error, count } = await client
+    let query = client
       .from('projects')
       .select('*', { count: 'exact' })
       .eq('user_id', userId)
+
+    if (tipo) {
+      query = query.eq('type', tipo)
+    }
+
+    const { data, error, count } = await query
       .order('updated_at', { ascending: false })
       .range(inicio, inicio + limite - 1)
 
@@ -117,7 +161,7 @@ export class ProjetoService {
     }
 
     return {
-      projetos: data || [],
+      projetos: (data as Project[]) || [],
       total: count || 0
     }
   }
@@ -129,14 +173,14 @@ export class ProjetoService {
     termo: string,
     userId: string,
     limite: number = 10
-  ): Promise<Projeto[]> {
+  ): Promise<Project[]> {
     const client = this.verificarSupabase()
 
     const { data, error } = await client
       .from('projects')
       .select('*')
       .eq('user_id', userId)
-      .or(`title.ilike.%${termo}%,code.ilike.%${termo}%`)
+      .or(`name.ilike.%${termo}%,description.ilike.%${termo}%`)
       .order('updated_at', { ascending: false })
       .limit(limite)
 
@@ -144,30 +188,22 @@ export class ProjetoService {
       throw new Error(`Erro ao pesquisar projetos do usuário: ${error.message}`)
     }
 
-    return data || []
+    return (data as Project[]) || []
   }
 
   /**
    * Atualiza um projeto existente
    */
-  /**
-   * Atualiza um projeto existente
-   */
   static async atualizarProjeto(
     id: string,
-    dados: {
-      title?: string
-      code?: string
-      visibility?: 'public' | 'unlisted' | 'private'
-      allow_edits?: boolean
-    }
-  ): Promise<Projeto> {
+    dados: UpdateProjectData
+  ): Promise<Project> {
     const client = this.verificarSupabase()
     
     // Primeiro, verificar se o projeto existe
     const { data: projetoExistente } = await client
       .from('projects')
-      .select('id')
+      .select('id, type')
       .eq('id', id)
       .maybeSingle()
 
@@ -186,7 +222,7 @@ export class ProjetoService {
       throw new Error(`Erro ao atualizar projeto: ${error.message}`)
     }
 
-    return data
+    return data as Project
   }
 
   /**
@@ -206,51 +242,50 @@ export class ProjetoService {
   }
 
   /**
-   * Cria uma nova versão de um projeto
+   * Duplica um projeto existente
    */
-  static async criarVersao(dados: {
-    project_id: string
-    label: string
-    code: string
-    created_by?: string | null
-  }): Promise<VersaoProjeto> {
+  static async duplicarProjeto(id: string, userId?: string): Promise<Project> {
     const client = this.verificarSupabase()
     
+    // Buscar projeto original
+    const original = await this.buscarProjetoPorId(id)
+    if (!original) {
+      throw new Error('Projeto original não encontrado')
+    }
+
+    // Criar cópia com novo slug
+    const slug = await this.gerarSlugUnico(`${original.name} (cópia)`)
+    
+    const copyData: Record<string, string | boolean | null> = {
+      name: `${original.name} (cópia)`,
+      slug,
+      type: original.type,
+      description: original.description,
+      is_public: false, // Cópias são privadas por padrão
+      allow_edits: false,
+      user_id: userId || null
+    }
+
+    // Copiar código baseado no tipo
+    if (original.type === ProjectType.JAVASCRIPT) {
+      copyData.js_code = original.js_code
+    } else if (original.type === ProjectType.WEB_COMPLETE) {
+      copyData.html_code = original.html_code
+      copyData.css_code = original.css_code
+      copyData.js_web_code = original.js_web_code
+    }
+
     const { data, error } = await client
-      .from('project_versions')
-      .insert({
-        project_id: dados.project_id,
-        label: dados.label,
-        code: dados.code,
-        created_by: dados.created_by || null
-      })
+      .from('projects')
+      .insert(copyData)
       .select()
       .single()
 
     if (error) {
-      throw new Error(`Erro ao criar versão: ${error.message}`)
+      throw new Error(`Erro ao duplicar projeto: ${error.message}`)
     }
 
-    return data
-  }
-
-  /**
-   * Lista versões de um projeto
-   */
-  static async listarVersoesProjeto(projectId: string): Promise<VersaoProjeto[]> {
-    const client = this.verificarSupabase()
-    
-    const { data, error } = await client
-      .from('project_versions')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      throw new Error(`Erro ao listar versões: ${error.message}`)
-    }
-
-    return data || []
+    return data as Project
   }
 
   /**
@@ -302,19 +337,19 @@ export class ProjetoService {
   }
 
   /**
-   * Pesquisa projetos por termo
+   * Pesquisa projetos públicos por termo
    */
   static async pesquisarProjetos(
     termo: string,
     limite: number = 10
-  ): Promise<Projeto[]> {
+  ): Promise<Project[]> {
     const client = this.verificarSupabase()
     
     const { data, error } = await client
       .from('projects')
       .select('*')
-      .eq('visibility', 'public')
-      .or(`title.ilike.%${termo}%,code.ilike.%${termo}%`)
+      .eq('is_public', true)
+      .or(`name.ilike.%${termo}%,description.ilike.%${termo}%`)
       .order('updated_at', { ascending: false })
       .limit(limite)
 
@@ -322,6 +357,35 @@ export class ProjetoService {
       throw new Error(`Erro ao pesquisar projetos: ${error.message}`)
     }
 
-    return data || []
+    return (data as Project[]) || []
+  }
+
+  /**
+   * Conta projetos por tipo do usuário
+   */
+  static async contarProjetosPorTipo(userId: string): Promise<{
+    javascript: number
+    web_complete: number
+    total: number
+  }> {
+    const client = this.verificarSupabase()
+
+    const { data: jsProjects, count: jsCount } = await client
+      .from('projects')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('type', ProjectType.JAVASCRIPT)
+
+    const { data: webProjects, count: webCount } = await client
+      .from('projects')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('type', ProjectType.WEB_COMPLETE)
+
+    return {
+      javascript: jsCount || 0,
+      web_complete: webCount || 0,
+      total: (jsCount || 0) + (webCount || 0)
+    }
   }
 }
