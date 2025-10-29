@@ -1,47 +1,61 @@
-import { supabase, Project } from './supabase'
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { supabase, Project, Database } from './supabase'
 import { CreateProjectData, UpdateProjectData, ProjectType } from '@/types/project'
+import { SupabaseClient } from '@supabase/supabase-js'
+
+type ProjectInsert = Database['public']['Tables']['projects']['Insert']
 
 export class ProjetoService {
   /**
-   * Verifica se o Supabase está configurado
+   * Verifica se o Supabase está configurado e retorna o client
    */
-  private static verificarSupabase() {
+  private static getClient(): SupabaseClient<Database> {
     if (!supabase) {
       throw new Error('Supabase não está configurado. Verifique as variáveis de ambiente.')
     }
-    return supabase
+    // Force type assertion para contornar problema de inferência do TypeScript
+    return supabase as SupabaseClient<Database>
   }
 
   /**
    * Cria um novo projeto no Supabase
    */
   static async criarProjeto(dados: CreateProjectData): Promise<Project> {
-    const client = this.verificarSupabase()
+    const client = this.getClient()
     const slug = await this.gerarSlugUnico(dados.name)
 
     // Preparar dados baseados no tipo de projeto
-    const baseData = {
-      name: dados.name,
-      slug,
-      type: dados.type,
-      description: dados.description || null,
-      is_public: dados.is_public || false,
-      allow_edits: dados.allow_edits || false,
-      user_id: dados.user_id || null
-    }
-
-    const projectData: Record<string, string | boolean | null> = { ...baseData }
-
-    if (dados.type === ProjectType.JAVASCRIPT) {
-      projectData.js_code = dados.js_code
-    } else if (dados.type === ProjectType.WEB_COMPLETE) {
-      projectData.html_code = dados.html_code
-      projectData.css_code = dados.css_code || ''
-      projectData.js_web_code = dados.js_web_code || ''
-    }
+    const projectData: ProjectInsert = dados.type === ProjectType.JAVASCRIPT
+      ? {
+          name: dados.name,
+          slug,
+          type: dados.type,
+          description: dados.description || null,
+          is_public: dados.is_public || false,
+          allow_edits: dados.allow_edits || false,
+          user_id: dados.user_id || null,
+          js_code: dados.js_code,
+          html_code: null,
+          css_code: null,
+          js_web_code: null
+        }
+      : {
+          name: dados.name,
+          slug,
+          type: dados.type,
+          description: dados.description || null,
+          is_public: dados.is_public || false,
+          allow_edits: dados.allow_edits || false,
+          user_id: dados.user_id || null,
+          js_code: null,
+          html_code: dados.html_code,
+          css_code: dados.css_code || '',
+          js_web_code: dados.js_web_code || ''
+        }
 
     const { data, error } = await client
       .from('projects')
+      // @ts-ignore - Supabase type inference issue with Database generic
       .insert(projectData)
       .select()
       .single()
@@ -57,7 +71,7 @@ export class ProjetoService {
    * Busca um projeto pelo slug
    */
   static async buscarProjetoPorSlug(slug: string): Promise<Project | null> {
-    const client = this.verificarSupabase()
+    const client = this.getClient()
     
     const { data, error } = await client
       .from('projects')
@@ -79,7 +93,7 @@ export class ProjetoService {
    * Busca um projeto pelo ID
    */
   static async buscarProjetoPorId(id: string): Promise<Project | null> {
-    const client = this.verificarSupabase()
+    const client = this.getClient()
     
     const { data, error } = await client
       .from('projects')
@@ -105,7 +119,7 @@ export class ProjetoService {
     limite: number = 20,
     tipo?: ProjectType
   ): Promise<{ projetos: Project[]; total: number }> {
-    const client = this.verificarSupabase()
+    const client = this.getClient()
     const inicio = pagina * limite
 
     let query = client
@@ -140,7 +154,7 @@ export class ProjetoService {
     limite: number = 20,
     tipo?: ProjectType
   ): Promise<{ projetos: Project[]; total: number }> {
-    const client = this.verificarSupabase()
+    const client = this.getClient()
     const inicio = pagina * limite
 
     let query = client
@@ -174,7 +188,7 @@ export class ProjetoService {
     userId: string,
     limite: number = 10
   ): Promise<Project[]> {
-    const client = this.verificarSupabase()
+    const client = this.getClient()
 
     const { data, error } = await client
       .from('projects')
@@ -198,7 +212,7 @@ export class ProjetoService {
     id: string,
     dados: UpdateProjectData
   ): Promise<Project> {
-    const client = this.verificarSupabase()
+    const client = this.getClient()
     
     // Primeiro, verificar se o projeto existe
     const { data: projetoExistente } = await client
@@ -213,6 +227,7 @@ export class ProjetoService {
     
     const { data, error } = await client
       .from('projects')
+      // @ts-ignore - Supabase type inference issue with Database generic
       .update(dados)
       .eq('id', id)
       .select()
@@ -229,7 +244,7 @@ export class ProjetoService {
    * Deleta um projeto
    */
   static async deletarProjeto(id: string): Promise<void> {
-    const client = this.verificarSupabase()
+    const client = this.getClient()
     
     const { error } = await client
       .from('projects')
@@ -245,7 +260,7 @@ export class ProjetoService {
    * Duplica um projeto existente
    */
   static async duplicarProjeto(id: string, userId?: string): Promise<Project> {
-    const client = this.verificarSupabase()
+    const client = this.getClient()
     
     // Buscar projeto original
     const original = await this.buscarProjetoPorId(id)
@@ -256,27 +271,38 @@ export class ProjetoService {
     // Criar cópia com novo slug
     const slug = await this.gerarSlugUnico(`${original.name} (cópia)`)
     
-    const copyData: Record<string, string | boolean | null> = {
-      name: `${original.name} (cópia)`,
-      slug,
-      type: original.type,
-      description: original.description,
-      is_public: false, // Cópias são privadas por padrão
-      allow_edits: false,
-      user_id: userId || null
-    }
-
     // Copiar código baseado no tipo
-    if (original.type === ProjectType.JAVASCRIPT) {
-      copyData.js_code = original.js_code
-    } else if (original.type === ProjectType.WEB_COMPLETE) {
-      copyData.html_code = original.html_code
-      copyData.css_code = original.css_code
-      copyData.js_web_code = original.js_web_code
-    }
+    const copyData: ProjectInsert = original.type === ProjectType.JAVASCRIPT
+      ? {
+          name: `${original.name} (cópia)`,
+          slug,
+          type: original.type,
+          description: original.description || null,
+          is_public: false,
+          allow_edits: false,
+          user_id: userId || null,
+          js_code: original.js_code || null,
+          html_code: null,
+          css_code: null,
+          js_web_code: null
+        }
+      : {
+          name: `${original.name} (cópia)`,
+          slug,
+          type: original.type,
+          description: original.description || null,
+          is_public: false,
+          allow_edits: false,
+          user_id: userId || null,
+          js_code: null,
+          html_code: original.html_code || null,
+          css_code: original.css_code || null,
+          js_web_code: original.js_web_code || null
+        }
 
     const { data, error } = await client
       .from('projects')
+      // @ts-ignore - Supabase type inference issue with Database generic
       .insert(copyData)
       .select()
       .single()
@@ -292,7 +318,7 @@ export class ProjetoService {
    * Gera um slug único para o projeto
    */
   private static async gerarSlugUnico(titulo: string): Promise<string> {
-    const client = this.verificarSupabase()
+    const client = this.getClient()
     
     // Gerar slug base a partir do título
     let slugBase = titulo
@@ -343,7 +369,7 @@ export class ProjetoService {
     termo: string,
     limite: number = 10
   ): Promise<Project[]> {
-    const client = this.verificarSupabase()
+    const client = this.getClient()
     
     const { data, error } = await client
       .from('projects')
@@ -368,7 +394,7 @@ export class ProjetoService {
     web_complete: number
     total: number
   }> {
-    const client = this.verificarSupabase()
+    const client = this.getClient()
 
     const { count: jsCount } = await client
       .from('projects')

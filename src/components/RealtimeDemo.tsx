@@ -95,12 +95,12 @@ export function RealtimeDemo() {
     alert('Use o dashboard (/dashboard) para criar projetos')
   }
 
-  const atualizarProjetoTeste = async (_projeto: Projeto) => {
+  const atualizarProjetoTeste = async () => {
     // NOTA: RealtimeDemo é legado
     console.log('RealtimeDemo: atualizarProjetoTeste desabilitado (legado)')
   }
 
-  const deletarProjetoTeste = async (_projetoId: string) => {
+  const deletarProjetoTeste = async () => {
     // NOTA: RealtimeDemo é legado
     console.log('RealtimeDemo: deletarProjetoTeste desabilitado (legado)')
   }
@@ -197,14 +197,14 @@ export function RealtimeDemo() {
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
                   <div className="flex-1">
-                    <h4 className="font-medium">{projeto.title}</h4>
+                    <h4 className="font-medium">{projeto.name}</h4>
                     <p className="text-sm text-muted-foreground">
                       Atualizado: {new Date(projeto.updated_at).toLocaleString()}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-xs">
-                      {projeto.visibility}
+                      {projeto.is_public ? 'Público' : 'Privado'}
                     </Badge>
                     {projeto.allow_edits && (
                       <Badge variant="secondary" className="text-xs">
@@ -215,7 +215,7 @@ export function RealtimeDemo() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => atualizarProjetoTeste(projeto)}
+                      onClick={() => atualizarProjetoTeste()}
                       disabled={!conectado}
                     >
                       <Edit className="w-3 h-3" />
@@ -223,7 +223,7 @@ export function RealtimeDemo() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => deletarProjetoTeste(projeto.id)}
+                      onClick={() => deletarProjetoTeste()}
                       disabled={!conectado}
                     >
                       <Trash2 className="w-3 h-3" />
