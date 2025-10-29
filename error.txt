@@ -1,0 +1,107 @@
+19:04:44.754 Running build in Washington, D.C., USA (East) – iad1
+19:04:44.754 Build machine configuration: 2 cores, 8 GB
+19:04:44.909 Cloning github.com/nicholasmacedoo/codelab-editor (Branch: main, Commit: 8904097)
+19:04:45.180 Cloning completed: 271.000ms
+19:04:46.082 Restored build cache from previous deployment (AuG5gfhcXsp28M3dkWcppryCKvT4)
+19:04:46.703 Running "vercel build"
+19:04:47.099 Vercel CLI 48.6.0
+19:04:47.405 Installing dependencies...
+19:04:48.587 
+19:04:48.588 up to date in 960ms
+19:04:48.588 
+19:04:48.588 145 packages are looking for funding
+19:04:48.589   run `npm fund` for details
+19:04:48.616 Detected Next.js version: 15.5.4
+19:04:48.621 Running "npm run build"
+19:04:48.725 
+19:04:48.726 > editor-js@0.1.0 build
+19:04:48.726 > next build --turbopack
+19:04:48.726 
+19:04:49.818    ▲ Next.js 15.5.4 (Turbopack)
+19:04:49.819 
+19:04:49.893    Creating an optimized production build ...
+19:05:02.997  ✓ Finished writing to disk in 24ms
+19:05:03.016  ✓ Compiled successfully in 12.4s
+19:05:03.021    Linting and checking validity of types ...
+19:05:10.373 
+19:05:10.373 Failed to compile.
+19:05:10.373 
+19:05:10.373 ./src/app/auth/page.tsx
+19:05:10.373 12:10  Warning: 'Code' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.373 12:46  Warning: 'Github' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.374 12:54  Warning: 'Chrome' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.374 
+19:05:10.374 ./src/app/compartilhar/[slug]/page.tsx
+19:05:10.374 45:6  Warning: React Hook useEffect has a missing dependency: 'loadProject'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+19:05:10.374 
+19:05:10.374 ./src/app/dashboard/page.tsx
+19:05:10.374 14:10  Warning: 'Input' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.374 22:3  Warning: 'Loader2' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.374 68:6  Warning: React Hook useEffect has a missing dependency: 'loadProjects'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+19:05:10.374 73:6  Warning: React Hook useEffect has a missing dependency: 'filterProjects'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+19:05:10.374 
+19:05:10.374 ./src/app/editor/[id]/page.tsx
+19:05:10.374 61:6  Warning: React Hook useEffect has a missing dependency: 'loadProject'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+19:05:10.374 
+19:05:10.374 ./src/components/ConsolePanel.tsx
+19:05:10.374 6:24  Warning: 'Filter' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.374 
+19:05:10.375 ./src/components/EditorShell.tsx
+19:05:10.375 10:10  Warning: 'ProjetoService' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.375 15:24  Warning: 'Save' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.375 15:30  Warning: 'Plus' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.375 15:44  Warning: 'Wifi' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.375 15:50  Warning: 'WifiOff' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.375 27:10  Warning: 'isOnline' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+19:05:10.375 41:10  Warning: 'mostrarAuthModal' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+19:05:10.375 154:6  Warning: React Hook useEffect has a missing dependency: 'consoleSize'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+19:05:10.375 224:6  Warning: React Hook useCallback has unnecessary dependencies: 'codigo' and 'nomeProjeto'. Either exclude them or remove the dependency array.  react-hooks/exhaustive-deps
+19:05:10.375 236:57  Warning: 'novoCode' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.375 236:75  Warning: 'novoTitulo' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.375 377:9  Warning: 'criarNovoProjeto' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+19:05:10.376 424:6  Warning: React Hook useCallback has unnecessary dependencies: 'codigo' and 'nomeProjeto'. Either exclude them or remove the dependency array.  react-hooks/exhaustive-deps
+19:05:10.376 445:11  Error: 'projetoParaCompartilhar' is never reassigned. Use 'const' instead.  prefer-const
+19:05:10.376 485:6  Warning: React Hook useCallback has a missing dependency: 'nomeProjeto'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+19:05:10.376 
+19:05:10.376 ./src/components/GerenciadorProjetos.tsx
+19:05:10.376 21:3  Warning: 'Eye' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.377 25:3  Warning: 'Edit3' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.377 26:3  Warning: 'Trash2' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.377 27:3  Warning: 'Share2' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.377 28:3  Warning: 'Copy' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.377 29:3  Warning: 'Check' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.381 57:6  Warning: React Hook useEffect has a missing dependency: 'carregarProjetos'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+19:05:10.381 
+19:05:10.381 ./src/components/SandboxRunner.tsx
+19:05:10.386 68:50  Warning: 'error' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+19:05:10.386 
+19:05:10.386 ./src/components/auth/LoginForm.tsx
+19:05:10.386 37:14  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.386 
+19:05:10.386 ./src/components/auth/RegisterForm.tsx
+19:05:10.386 17:46  Warning: 'onSuccess' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.386 54:14  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.386 
+19:05:10.386 ./src/components/dashboard/new-project-dialog.tsx
+19:05:10.386 8:3  Warning: 'JavaScriptTemplate' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.387 9:3  Warning: 'WebTemplate' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.387 
+19:05:10.387 ./src/components/dashboard/search-command.tsx
+19:05:10.387 73:6  Warning: React Hook useEffect has missing dependencies: 'handleSelectProject' and 'onClose'. Either include them or remove the dependency array. If 'onClose' changes too often, find the parent component that defines it and wrap that definition in useCallback.  react-hooks/exhaustive-deps
+19:05:10.387 
+19:05:10.387 ./src/components/editor/web-preview.tsx
+19:05:10.387 21:6  Warning: React Hook useEffect has a missing dependency: 'updatePreview'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+19:05:10.387 
+19:05:10.387 ./src/hooks/useKeyboardShortcuts.ts
+19:05:10.387 33:13  Warning: 'ctrlMatch' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+19:05:10.387 36:13  Warning: 'metaMatch' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+19:05:10.387 
+19:05:10.387 ./src/hooks/useRealtimeProjetos.ts
+19:05:10.387 20:3  Warning: 'projetos' is defined but never used.  @typescript-eslint/no-unused-vars
+19:05:10.387 
+19:05:10.387 ./src/lib/projeto-service.ts
+19:05:10.387 373:19  Warning: 'jsProjects' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+19:05:10.387 379:19  Warning: 'webProjects' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+19:05:10.387 
+19:05:10.387 info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+19:05:10.423 Error: Command "npm run build" exited with 1

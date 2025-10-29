@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProjetoService } from '@/lib/projeto-service'
@@ -11,7 +11,6 @@ import { DeleteProjectDialog } from '@/components/dashboard/delete-project-dialo
 import { SearchCommand } from '@/components/dashboard/search-command'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { UserMenu } from '@/components/UserMenu'
 import { 
   Plus, 
@@ -19,7 +18,6 @@ import {
   LogIn,
   Code2,
   Globe,
-  Loader2,
   Command
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -60,19 +58,7 @@ export default function DashboardPage() {
     }
   ])
 
-  // Carregar projetos do usuário
-  useEffect(() => {
-    if (!authLoading) {
-      loadProjects()
-    }
-  }, [authLoading, user])
-
-  // Filtrar projetos quando mudar busca ou filtro
-  useEffect(() => {
-    filterProjects()
-  }, [projects, searchTerm, filterType])
-
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     setLoading(true)
     try {
       if (user) {
@@ -89,9 +75,9 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
-  const filterProjects = () => {
+  const filterProjects = useCallback(() => {
     let filtered = projects
 
     // Filtrar por tipo
@@ -109,7 +95,19 @@ export default function DashboardPage() {
     }
 
     setFilteredProjects(filtered)
-  }
+  }, [projects, searchTerm, filterType])
+
+  // Carregar projetos do usuário
+  useEffect(() => {
+    if (!authLoading) {
+      loadProjects()
+    }
+  }, [authLoading, loadProjects])
+
+  // Filtrar projetos quando mudar busca ou filtro
+  useEffect(() => {
+    filterProjects()
+  }, [filterProjects])
 
   const handleCreateProject = async (data: {
     name: string

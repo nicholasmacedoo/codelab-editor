@@ -30,10 +30,8 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
     }
 
     for (const shortcut of shortcuts) {
-      const ctrlMatch = shortcut.ctrlKey === undefined || shortcut.ctrlKey === event.ctrlKey
       const shiftMatch = shortcut.shiftKey === undefined || shortcut.shiftKey === event.shiftKey
       const altMatch = shortcut.altKey === undefined || shortcut.altKey === event.altKey
-      const metaMatch = shortcut.metaKey === undefined || shortcut.metaKey === event.metaKey
       const keyMatch = shortcut.key.toLowerCase() === event.key.toLowerCase()
 
       // Tratamento especial para Cmd/Ctrl

@@ -55,19 +55,7 @@ export default function EditorPage() {
   const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const lastSavedRef = useRef<string>('')
 
-  // Carregar projeto
-  useEffect(() => {
-    loadProject()
-  }, [projectId])
-
-  // Abrir modal de compartilhamento se necessário
-  useEffect(() => {
-    if (shouldOpenShare && project) {
-      setShowShareModal(true)
-    }
-  }, [shouldOpenShare, project])
-
-  const loadProject = async () => {
+  const loadProject = useCallback(async () => {
     setLoading(true)
     try {
       const projectData = await ProjetoService.buscarProjetoPorId(projectId)
@@ -101,7 +89,19 @@ export default function EditorPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [projectId, router])
+
+  // Carregar projeto
+  useEffect(() => {
+    loadProject()
+  }, [loadProject])
+
+  // Abrir modal de compartilhamento se necessário
+  useEffect(() => {
+    if (shouldOpenShare && project) {
+      setShowShareModal(true)
+    }
+  }, [shouldOpenShare, project])
 
   const saveProject = useCallback(async (showToast = true) => {
     if (!project) return

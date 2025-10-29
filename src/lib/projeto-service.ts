@@ -370,13 +370,13 @@ export class ProjetoService {
   }> {
     const client = this.verificarSupabase()
 
-    const { data: jsProjects, count: jsCount } = await client
+    const { count: jsCount } = await client
       .from('projects')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('type', ProjectType.JAVASCRIPT)
 
-    const { data: webProjects, count: webCount } = await client
+    const { count: webCount } = await client
       .from('projects')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)

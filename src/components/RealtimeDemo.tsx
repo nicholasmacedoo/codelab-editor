@@ -90,47 +90,19 @@ export function RealtimeDemo() {
   }
 
   const criarProjetoTeste = async () => {
-    if (!novoProjeto.title.trim()) return
-
-    try {
-      await ProjetoService.criarProjeto({
-        title: novoProjeto.title,
-        code: novoProjeto.code,
-        visibility: 'public',
-        allow_edits: true,
-        user_id: null // Projeto de teste sem usuário específico
-      })
-      
-      setNovoProjeto({
-        title: '',
-        code: '// Código de exemplo\nconsole.log("Olá, tempo real!");'
-      })
-      
-      // Recarrega a lista após criar
-      await carregarProjetos()
-    } catch (error) {
-      console.error('Erro ao criar projeto:', error)
-      // Adiciona feedback visual do erro
-      setAtualizacoes(prev => [...prev, `ERRO: ${error instanceof Error ? error.message : 'Erro desconhecido'} - ${new Date().toLocaleTimeString()}`])
-    }
+    // NOTA: RealtimeDemo é legado e usa estrutura antiga
+    console.log('RealtimeDemo: criarProjetoTeste desabilitado (legado)')
+    alert('Use o dashboard (/dashboard) para criar projetos')
   }
 
-  const atualizarProjetoTeste = async (projeto: Projeto) => {
-    try {
-      await ProjetoService.atualizarProjeto(projeto.id, {
-        title: `${projeto.title} (Atualizado ${new Date().toLocaleTimeString()})`
-      })
-    } catch (error) {
-      console.error('Erro ao atualizar projeto:', error)
-    }
+  const atualizarProjetoTeste = async (_projeto: Projeto) => {
+    // NOTA: RealtimeDemo é legado
+    console.log('RealtimeDemo: atualizarProjetoTeste desabilitado (legado)')
   }
 
-  const deletarProjetoTeste = async (projetoId: string) => {
-    try {
-      await ProjetoService.deletarProjeto(projetoId)
-    } catch (error) {
-      console.error('Erro ao deletar projeto:', error)
-    }
+  const deletarProjetoTeste = async (_projetoId: string) => {
+    // NOTA: RealtimeDemo é legado
+    console.log('RealtimeDemo: deletarProjetoTeste desabilitado (legado)')
   }
 
   return (

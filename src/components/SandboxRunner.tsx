@@ -65,7 +65,7 @@ export function useSandboxRunner(config: SandboxRunnerConfig): SandboxRunnerRetu
 
           case 'execution-end':
             isRunningRef.current = false
-            const { duration, timedOut, stopped, error } = data
+            const { duration, timedOut, stopped } = data
             
             if (timedOut) {
               onError('Execução interrompida: Timeout de 3 segundos excedido')

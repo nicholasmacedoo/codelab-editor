@@ -34,7 +34,7 @@ export function LoginForm({ onToggleMode, onSuccess }: LoginFormProps) {
       } else {
         onSuccess?.()
       }
-    } catch (err) {
+    } catch {
       setError('Erro inesperado ao fazer login')
     } finally {
       setLoading(false)
