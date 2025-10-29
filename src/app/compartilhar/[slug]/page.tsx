@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ProjetoService } from '@/lib/projeto-service'
 import { Project, ProjectType } from '@/types/project'
@@ -40,22 +40,7 @@ export default function CompartilharPage() {
     jsWeb: ''
   })
 
-  useEffect(() => {
-    loadProject()
-  }, [slug])
-
-  useEffect(() => {
-    if (project) {
-      setLocalCode({
-        js: project.js_code || '',
-        html: project.html_code || '',
-        css: project.css_code || '',
-        jsWeb: project.js_web_code || ''
-      })
-    }
-  }, [project])
-
-  const loadProject = async () => {
+  const loadProject = useCallback(async () => {
     setLoading(true)
     try {
       const projectData = await ProjetoService.buscarProjetoPorSlug(slug)
@@ -90,7 +75,22 @@ export default function CompartilharPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [slug, router])
+
+  useEffect(() => {
+    loadProject()
+  }, [loadProject])
+
+  useEffect(() => {
+    if (project) {
+      setLocalCode({
+        js: project.js_code || '',
+        html: project.html_code || '',
+        css: project.css_code || '',
+        jsWeb: project.js_web_code || ''
+      })
+    }
+  }, [project])
 
   const handleCopyLink = async () => {
     try {

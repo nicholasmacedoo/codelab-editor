@@ -29,7 +29,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
           {mode === 'login' ? (
             <LoginForm onToggleMode={toggleMode} onSuccess={handleSuccess} />
           ) : (
-            <RegisterForm onToggleMode={toggleMode} onSuccess={handleSuccess} />
+            <RegisterForm onToggleMode={toggleMode} />
           )}
         </div>
       </DialogContent>

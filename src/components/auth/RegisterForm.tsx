@@ -11,10 +11,9 @@ import { Loader2, Mail, Lock, UserPlus } from 'lucide-react'
 
 interface RegisterFormProps {
   onToggleMode: () => void
-  onSuccess?: () => void
 }
 
-export function RegisterForm({ onToggleMode, onSuccess }: RegisterFormProps) {
+export function RegisterForm({ onToggleMode }: RegisterFormProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -51,7 +50,7 @@ export function RegisterForm({ onToggleMode, onSuccess }: RegisterFormProps) {
         setSuccess(true)
         // Não chama onSuccess imediatamente pois o usuário precisa confirmar o email
       }
-    } catch (err) {
+    } catch {
       setError('Erro inesperado ao criar conta')
     } finally {
       setLoading(false)

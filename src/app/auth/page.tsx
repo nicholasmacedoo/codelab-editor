@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Code, Mail, Lock, User, ArrowRight, Github, Chrome } from 'lucide-react'
+import { Mail, Lock, User, ArrowRight } from 'lucide-react'
 
 export default function PaginaAutenticacao() {
   const router = useRouter()

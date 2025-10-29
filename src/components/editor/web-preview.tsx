@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Maximize2, RefreshCw, ExternalLink } from 'lucide-react'
 
@@ -14,13 +14,8 @@ interface WebPreviewProps {
 export function WebPreview({ html, css, js, className = '' }: WebPreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [refreshKey, setRefreshKey] = useState(0)
 
-  useEffect(() => {
-    updatePreview()
-  }, [html, css, js, refreshKey])
-
-  const updatePreview = () => {
+  const updatePreview = useCallback(() => {
     if (!iframeRef.current) return
 
     const iframe = iframeRef.current
@@ -70,10 +65,14 @@ export function WebPreview({ html, css, js, className = '' }: WebPreviewProps) {
     document.open()
     document.write(fullHtml)
     document.close()
-  }
+  }, [html, css, js])
+
+  useEffect(() => {
+    updatePreview()
+  }, [updatePreview])
 
   const handleRefresh = () => {
-    setRefreshKey(prev => prev + 1)
+    updatePreview()
   }
 
   const toggleFullscreen = () => {

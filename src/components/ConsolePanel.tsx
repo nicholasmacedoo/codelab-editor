@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { LogEntry } from './SandboxRunner'
-import { Trash2, Copy, Filter, ChevronDown, ChevronRight } from 'lucide-react'
+import { Trash2, Copy, ChevronDown, ChevronRight } from 'lucide-react'
 
 interface ConsolePanelProps {
   logs: LogEntry[]

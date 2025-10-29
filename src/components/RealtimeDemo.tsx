@@ -90,47 +90,19 @@ export function RealtimeDemo() {
   }
 
   const criarProjetoTeste = async () => {
-    if (!novoProjeto.title.trim()) return
-
-    try {
-      await ProjetoService.criarProjeto({
-        title: novoProjeto.title,
-        code: novoProjeto.code,
-        visibility: 'public',
-        allow_edits: true,
-        user_id: null // Projeto de teste sem usuário específico
-      })
-      
-      setNovoProjeto({
-        title: '',
-        code: '// Código de exemplo\nconsole.log("Olá, tempo real!");'
-      })
-      
-      // Recarrega a lista após criar
-      await carregarProjetos()
-    } catch (error) {
-      console.error('Erro ao criar projeto:', error)
-      // Adiciona feedback visual do erro
-      setAtualizacoes(prev => [...prev, `ERRO: ${error instanceof Error ? error.message : 'Erro desconhecido'} - ${new Date().toLocaleTimeString()}`])
-    }
+    // NOTA: RealtimeDemo é legado e usa estrutura antiga
+    console.log('RealtimeDemo: criarProjetoTeste desabilitado (legado)')
+    alert('Use o dashboard (/dashboard) para criar projetos')
   }
 
-  const atualizarProjetoTeste = async (projeto: Projeto) => {
-    try {
-      await ProjetoService.atualizarProjeto(projeto.id, {
-        title: `${projeto.title} (Atualizado ${new Date().toLocaleTimeString()})`
-      })
-    } catch (error) {
-      console.error('Erro ao atualizar projeto:', error)
-    }
+  const atualizarProjetoTeste = async () => {
+    // NOTA: RealtimeDemo é legado
+    console.log('RealtimeDemo: atualizarProjetoTeste desabilitado (legado)')
   }
 
-  const deletarProjetoTeste = async (projetoId: string) => {
-    try {
-      await ProjetoService.deletarProjeto(projetoId)
-    } catch (error) {
-      console.error('Erro ao deletar projeto:', error)
-    }
+  const deletarProjetoTeste = async () => {
+    // NOTA: RealtimeDemo é legado
+    console.log('RealtimeDemo: deletarProjetoTeste desabilitado (legado)')
   }
 
   return (
@@ -225,14 +197,14 @@ export function RealtimeDemo() {
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
                   <div className="flex-1">
-                    <h4 className="font-medium">{projeto.title}</h4>
+                    <h4 className="font-medium">{projeto.name}</h4>
                     <p className="text-sm text-muted-foreground">
                       Atualizado: {new Date(projeto.updated_at).toLocaleString()}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-xs">
-                      {projeto.visibility}
+                      {projeto.is_public ? 'Público' : 'Privado'}
                     </Badge>
                     {projeto.allow_edits && (
                       <Badge variant="secondary" className="text-xs">
@@ -243,7 +215,7 @@ export function RealtimeDemo() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => atualizarProjetoTeste(projeto)}
+                      onClick={() => atualizarProjetoTeste()}
                       disabled={!conectado}
                     >
                       <Edit className="w-3 h-3" />
@@ -251,7 +223,7 @@ export function RealtimeDemo() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => deletarProjetoTeste(projeto.id)}
+                      onClick={() => deletarProjetoTeste()}
                       disabled={!conectado}
                     >
                       <Trash2 className="w-3 h-3" />

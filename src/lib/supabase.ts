@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { createBrowserClient } from '@supabase/ssr'
 import { Database, Project, ProjectVersion } from '@/types/project'
 
@@ -9,12 +9,12 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 const isSupabaseConfigured = supabaseUrl && supabaseAnonKey
 
 // Cliente para uso no browser (apenas se configurado)
-export const supabase = isSupabaseConfigured 
+export const supabase: SupabaseClient<Database> | null = isSupabaseConfigured 
   ? createBrowserClient<Database>(supabaseUrl, supabaseAnonKey)
   : null
 
 // Cliente para uso no servidor (com service role key)
-export const supabaseAdmin = isSupabaseConfigured && process.env.SUPABASE_SERVICE_ROLE_KEY
+export const supabaseAdmin: SupabaseClient<Database> | null = isSupabaseConfigured && process.env.SUPABASE_SERVICE_ROLE_KEY
   ? createClient<Database>(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY)
   : null
 

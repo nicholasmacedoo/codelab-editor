@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProjetoService } from '@/lib/projeto-service'
-import { Projeto } from '@/lib/supabase'
+import { Project } from '@/types/project'
 import { useRealtimeProjetos } from '@/hooks/useRealtimeProjetos'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,28 +18,22 @@ import {
   Plus, 
   Code, 
   Calendar, 
-  Eye, 
   EyeOff, 
   Globe, 
   Lock, 
-  Edit3,
-  Trash2,
-  Share2,
-  Copy,
-  Check,
   X
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 interface GerenciadorProjetosProps {
-  onSelecionarProjeto?: (projeto: Projeto) => void
+  onSelecionarProjeto?: (projeto: Project) => void
   onNovoProjeto?: () => void
   onClose?: () => void
 }
 
-export function GerenciadorProjetos({ onSelecionarProjeto, onNovoProjeto, onClose }: GerenciadorProjetosProps) {
-  const [projetos, setProjetos] = useState<Projeto[]>([])
+export function GerenciadorProjetos({ onSelecionarProjeto, onClose }: GerenciadorProjetosProps) {
+  const [projetos, setProjetos] = useState<Project[]>([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [termoPesquisa, setTermoPesquisa] = useState('')
@@ -52,18 +46,7 @@ export function GerenciadorProjetos({ onSelecionarProjeto, onNovoProjeto, onClos
   })
   const { user } = useAuth()
 
-  useEffect(() => {
-    carregarProjetos()
-  }, [])
-
-  // Hook para atualizações em tempo real
-  const { realtimeDisponivel } = useRealtimeProjetos({
-    projetos,
-    setProjetos,
-    monitorarPublicos: false
-  })
-
-  const carregarProjetos = async () => {
+  const carregarProjetos = useCallback(async () => {
     try {
       setCarregando(true)
       setErro(null)
@@ -80,7 +63,17 @@ export function GerenciadorProjetos({ onSelecionarProjeto, onNovoProjeto, onClos
     } finally {
       setCarregando(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    carregarProjetos()
+  }, [carregarProjetos])
+
+  // Hook para atualizações em tempo real
+  const { realtimeDisponivel } = useRealtimeProjetos({
+    setProjetos,
+    monitorarPublicos: false
+  })
 
   const pesquisarProjetos = async (termo: string) => {
     if (!termo.trim()) {
@@ -107,47 +100,18 @@ export function GerenciadorProjetos({ onSelecionarProjeto, onNovoProjeto, onClos
   }
 
   const criarNovoProjeto = async () => {
-    try {
-      const novoProjeto = await ProjetoService.criarProjeto({
-        ...novoProjetoForm,
-        user_id: user?.id || null
-      })
-      setProjetos(prev => [novoProjeto, ...prev])
-      setDialogNovoAberto(false)
-      setNovoProjetoForm({
-        title: '',
-        code: '// Seu código JavaScript aqui\nconsole.log("Olá, mundo!");',
-        visibility: 'public',
-        allow_edits: false
-      })
-      
-      if (onNovoProjeto) {
-        onNovoProjeto()
-      }
-    } catch (error) {
-      console.error('Erro ao criar projeto:', error)
-      setErro('Erro ao criar projeto. Tente novamente.')
-    }
+    // NOTA: GerenciadorProjetos é legado e usa estrutura antiga
+    console.log('GerenciadorProjetos: criarNovoProjeto desabilitado (legado)')
+    setErro('Este componente é legado. Use /dashboard para criar projetos.')
+    setDialogNovoAberto(false)
   }
 
-  const selecionarProjeto = (projeto: Projeto) => {
+  const selecionarProjeto = (projeto: Project) => {
     if (onSelecionarProjeto) {
       onSelecionarProjeto(projeto)
     }
   }
 
-  const obterCorVisibilidade = (visibility: string) => {
-    switch (visibility) {
-      case 'public':
-        return 'bg-success/20 text-success border-success/30'
-      case 'unlisted':
-        return 'bg-secondary/20 text-secondary border-secondary/30'
-      case 'private':
-        return 'bg-destructive/20 text-destructive border-destructive/30'
-      default:
-        return 'bg-muted/20 text-muted-foreground border-muted/30'
-    }
-  }
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -326,16 +290,16 @@ export function GerenciadorProjetos({ onSelecionarProjeto, onNovoProjeto, onClos
                 >
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
-                      <CardTitle className="text-lg line-clamp-1">{projeto.title}</CardTitle>
+                      <CardTitle className="text-lg line-clamp-1">{projeto.name}</CardTitle>
                       <Badge 
                         variant="outline" 
-                        className={`text-xs ${obterCorVisibilidade(projeto.visibility)}`}
+                        className="text-xs"
                       >
-                        {projeto.visibility === 'public' && <Globe className="w-3 h-3 mr-1" />}
-                        {projeto.visibility === 'unlisted' && <EyeOff className="w-3 h-3 mr-1" />}
-                        {projeto.visibility === 'private' && <Lock className="w-3 h-3 mr-1" />}
-                        {projeto.visibility === 'public' ? 'Público' : 
-                         projeto.visibility === 'unlisted' ? 'Não listado' : 'Privado'}
+                        {projeto.is_public ? (
+                          <><Globe className="w-3 h-3 mr-1" />Público</>
+                        ) : (
+                          <><Lock className="w-3 h-3 mr-1" />Privado</>
+                        )}
                       </Badge>
                     </div>
                     <CardDescription className="flex items-center gap-2 text-xs">
@@ -348,10 +312,9 @@ export function GerenciadorProjetos({ onSelecionarProjeto, onNovoProjeto, onClos
                   </CardHeader>
                   <CardContent>
                     <div className="bg-muted/30 rounded-md p-3 font-mono text-xs overflow-hidden">
-                      <pre className="whitespace-pre-wrap line-clamp-3">
-                        {projeto.code.slice(0, 150)}
-                        {projeto.code.length > 150 && '...'}
-                      </pre>
+                      <div className="text-muted-foreground line-clamp-2">
+                        {projeto.description || 'Sem descrição'}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

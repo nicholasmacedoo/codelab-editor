@@ -4,9 +4,7 @@ import { useState } from 'react'
 import { 
   ProjectType, 
   JAVASCRIPT_TEMPLATES, 
-  WEB_TEMPLATES,
-  JavaScriptTemplate,
-  WebTemplate
+  WEB_TEMPLATES
 } from '@/types/project'
 import {
   Dialog,

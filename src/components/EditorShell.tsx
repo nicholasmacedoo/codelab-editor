@@ -6,13 +6,11 @@ import { ConsolePanel } from './ConsolePanel'
 import { RealtimeDemo } from '@/components/RealtimeDemo'
 import { GerenciadorProjetos } from '@/components/GerenciadorProjetos'
 import { useSandboxRunner, LogEntry } from './SandboxRunner'
-import { ArmazenamentoLocal, ProjetoLocal } from '@/lib/storage'
-import { ProjetoService } from '@/lib/projeto-service'
 import { Projeto } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Play, Square, Save, Plus, Share2, Wifi, WifiOff, FolderOpen, Activity, LogIn, PanelRight, PanelBottom } from 'lucide-react'
+import { Play, Square, Share2, FolderOpen, Activity, LogIn, PanelRight, PanelBottom } from 'lucide-react'
 import { ModalPermissoes, ConfiguracaoCompartilhamento } from '@/components/ModalPermissoes'
 import { UserMenu } from '@/components/UserMenu'
 import { toast } from 'sonner'
@@ -24,11 +22,9 @@ export function EditorShell() {
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [isExecuting, setIsExecuting] = useState(false)
   const [executionTime, setExecutionTime] = useState<number | undefined>(undefined)
-  const [isOnline, setIsOnline] = useState(true) // Inicializar como true para evitar hidratação
   
   // Estados de projeto
   const [nomeProjeto, setNomeProjeto] = useState('Meu Projeto')
-  const [projetoAtual, setProjetoAtual] = useState<ProjetoLocal | null>(null)
   const [projetoSupabase, setProjetoSupabase] = useState<Projeto | null>(null)
   
   // Estados de UI
@@ -38,7 +34,6 @@ export function EditorShell() {
   
   // Estados de autenticação
   const { user, loading: authLoading } = useAuth()
-  const [mostrarAuthModal, setMostrarAuthModal] = useState(false)
   
   // Layout e resize do editor/console
   const [layoutMode, setLayoutMode] = useState<'right' | 'bottom'>('right')
@@ -139,13 +134,13 @@ export function EditorShell() {
     try {
       if (layoutMode === 'right') {
         const rightStr = localStorage.getItem('labcode.consoleSize.right')
-        const size = rightStr ? parseInt(rightStr) : consoleSize
+        const size = rightStr ? parseInt(rightStr) : 500
         const adjusted = Math.max(500, Math.min(800, Number.isNaN(size) ? 500 : size))
         setConsoleSize(adjusted)
         resizeStartSize.current = adjusted
       } else {
         const bottomStr = localStorage.getItem('labcode.consoleSize.bottom')
-        const size = bottomStr ? parseInt(bottomStr) : consoleSize
+        const size = bottomStr ? parseInt(bottomStr) : 240
         const adjusted = Math.max(160, Math.min(600, Number.isNaN(size) ? 240 : size))
         setConsoleSize(adjusted)
         resizeStartSize.current = adjusted
@@ -165,21 +160,6 @@ export function EditorShell() {
   const realtimeUnsubscribeRef = useRef<(() => void) | null>(null)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Atualizar status online após hidratação
-  useEffect(() => {
-    setIsOnline(navigator.onLine)
-    
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
-    
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-    
-    return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
-  }, [])
 
   // Função para iniciar sincronização em tempo real
   const iniciarSincronizacaoRealtime = useCallback((projetoId: string) => {
@@ -221,7 +201,7 @@ export function EditorShell() {
     } catch (error) {
       console.error('Erro ao iniciar sincronização em tempo real:', error)
     }
-  }, [codigo, nomeProjeto, projetoSupabase])
+  }, [projetoSupabase])
 
   // Função para parar sincronização em tempo real
   const pararSincronizacaoRealtime = useCallback(() => {
@@ -233,7 +213,7 @@ export function EditorShell() {
   }, [])
 
   // Função para sincronizar automaticamente mudanças (com debounce)
-  const sincronizarAutomaticamente = useCallback(async (novoCode: string, novoTitulo: string) => {
+  const sincronizarAutomaticamente = useCallback(async () => {
     if (!projetoSupabase) return
 
     // Cancela sincronização anterior
@@ -338,31 +318,11 @@ export function EditorShell() {
     } catch (error) {
       console.error('Erro ao salvar no Supabase, salvando localmente:', error)
       
-      // Fallback para armazenamento local
-      try {
-        const projeto: ProjetoLocal = {
-          id: crypto.randomUUID(),
-          user_id: null,
-          slug: nomeProjeto.toLowerCase().replace(/\s+/g, '-'),
-          title: nomeProjeto,
-          code: codigo,
-          visibility: 'private',
-          allow_edits: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          isLocal: true
-        }
-        
-        await ArmazenamentoLocal.salvarProjeto(projeto)
-        setProjetoAtual(projeto)
-        console.log('Projeto salvo localmente:', projeto)
-        toast.success('Projeto salvo localmente!')
-      } catch (localError) {
-        console.error('Erro ao salvar localmente:', localError)
-        toast.error('Erro ao salvar projeto')
-      }
+      // Fallback: EditorShell é legado, não salvar
+      console.log('EditorShell é legado - salvamento local desabilitado')
+      toast.info('Use o novo dashboard (/dashboard) para gerenciar projetos')
     }
-  }, [nomeProjeto, codigo, projetoSupabase])
+  }, [nomeProjeto, projetoSupabase])
 
   // Função para lidar com mudanças no código
   const handleCodigoChange = useCallback((novoCode: string) => {
@@ -370,38 +330,18 @@ export function EditorShell() {
     
     // Se há um projeto compartilhado, sincronizar automaticamente
     if (projetoSupabase) {
-      sincronizarAutomaticamente(novoCode, nomeProjeto)
+      sincronizarAutomaticamente()
     }
-  }, [projetoSupabase, nomeProjeto, sincronizarAutomaticamente])
+  }, [projetoSupabase, sincronizarAutomaticamente])
 
-  const criarNovoProjeto = useCallback(() => {
-    setCodigo('// Novo projeto\nconsole.log("Olá, mundo!");')
-    setLogs([])
-    setProjetoAtual(null)
-    setProjetoSupabase(null)
-    setNomeProjeto('')
-    setExecutionTime(undefined)
-  }, [])
 
-  const selecionarProjeto = useCallback((projeto: Projeto) => {
-    setCodigo(projeto.code)
-    setNomeProjeto(projeto.title)
-    setProjetoSupabase(projeto)
-    // Converter Projeto para ProjetoLocal para compatibilidade
-    const projetoLocal: ProjetoLocal = {
-      ...projeto,
-      isLocal: false
-    }
-    setProjetoAtual(projetoLocal)
-    setLogs([])
-    setExecutionTime(undefined)
+  const selecionarProjeto = useCallback(() => {
+    // NOTA: EditorShell é legado e usa estrutura antiga
+    // Esta função está desabilitada - use o novo dashboard
+    console.log('EditorShell: selecionarProjeto desabilitado (legado)')
+    toast.info('Use o editor do dashboard para abrir projetos')
     setMostrarGerenciador(false)
-    
-    // Se o projeto é público ou permite edições, iniciar sincronização em tempo real
-    if (projeto.visibility === 'public' || projeto.allow_edits) {
-      iniciarSincronizacaoRealtime(projeto.id)
-    }
-  }, [iniciarSincronizacaoRealtime])
+  }, [])
 
   // Função para compartilhar projeto
   const compartilharProjeto = useCallback(async () => {
@@ -421,7 +361,7 @@ export function EditorShell() {
     }
     
     setMostrarModalPermissoes(true)
-  }, [projetoSupabase, nomeProjeto, codigo])
+  }, [projetoSupabase])
 
   // Função para processar compartilhamento com configurações
   const processarCompartilhamento = useCallback(async (configuracao: ConfiguracaoCompartilhamento) => {
@@ -442,7 +382,7 @@ export function EditorShell() {
       }
       
       // Salvar ou atualizar o projeto primeiro
-      let projetoParaCompartilhar = projetoSupabase
+      const projetoParaCompartilhar = projetoSupabase
       
       if (!projetoParaCompartilhar) {
         // NOTA: EditorShell é legado - funcionalidade desabilitada
@@ -482,7 +422,7 @@ export function EditorShell() {
         duration: 4000,
       })
     }
-  }, [codigo, projetoSupabase, user, iniciarSincronizacaoRealtime])
+  }, [projetoSupabase, iniciarSincronizacaoRealtime, nomeProjeto])
 
   return (
     <div className="h-screen flex flex-col bg-gray-900">
@@ -556,7 +496,7 @@ export function EditorShell() {
                 <Button
                   variant="default"
                   size="sm"
-                  onClick={() => setMostrarAuthModal(true)}
+                  onClick={() => window.location.href = '/auth'}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <LogIn className="w-4 h-4 mr-2" />
@@ -743,7 +683,7 @@ export function EditorShell() {
         onClose={() => setMostrarModalPermissoes(false)}
         onCompartilhar={processarCompartilhamento}
         nomeProjeto={nomeProjeto || 'Projeto sem nome'}
-        projetoExistente={!!projetoAtual || !!projetoSupabase}
+        projetoExistente={!!projetoSupabase}
       />
     </div>
   )

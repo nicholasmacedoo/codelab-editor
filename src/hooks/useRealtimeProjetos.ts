@@ -1,12 +1,10 @@
 import { useEffect, useCallback } from 'react'
 import { RealtimeService, RealtimeProjectUpdate } from '@/lib/realtime-service'
-import { Projeto } from '@/lib/supabase'
+import { Project } from '@/types/project'
 
 interface UseRealtimeProjetosProps {
-  /** Lista atual de projetos */
-  projetos: Projeto[]
   /** Função para atualizar a lista de projetos */
-  setProjetos: (updater: (projetos: Projeto[]) => Projeto[]) => void
+  setProjetos: (updater: (projetos: Project[]) => Project[]) => void
   /** ID do projeto específico para monitorar (opcional) */
   projetoId?: string
   /** Se deve monitorar todos os projetos públicos */
@@ -17,7 +15,6 @@ interface UseRealtimeProjetosProps {
  * Hook para gerenciar atualizações em tempo real de projetos
  */
 export function useRealtimeProjetos({
-  projetos,
   setProjetos,
   projetoId,
   monitorarPublicos = false
@@ -26,13 +23,13 @@ export function useRealtimeProjetos({
   const handleProjectUpdate = useCallback((update: RealtimeProjectUpdate) => {
     console.log('Atualização em tempo real recebida:', update)
     
-    setProjetos((projetosAtuais: Projeto[]) => {
+    setProjetos((projetosAtuais: Project[]) => {
       switch (update.type) {
         case 'INSERT': {
           // Adiciona novo projeto se não existir
-          const novoProjetoExiste = projetosAtuais.some((p: Projeto) => p.id === update.project_id)
+          const novoProjetoExiste = projetosAtuais.some((p: Project) => p.id === update.project_id)
           if (!novoProjetoExiste && update.data) {
-            const novoProjeto = update.data as unknown as Projeto
+            const novoProjeto = update.data as unknown as Project
             return [...projetosAtuais, novoProjeto]
           }
           return projetosAtuais
@@ -40,16 +37,16 @@ export function useRealtimeProjetos({
         
         case 'UPDATE': {
           // Atualiza projeto existente
-          return projetosAtuais.map((projeto: Projeto) => 
+          return projetosAtuais.map((projeto: Project) => 
             projeto.id === update.project_id && update.data
-              ? { ...projeto, ...(update.data as Partial<Projeto>) }
+              ? { ...projeto, ...(update.data as Partial<Project>) }
               : projeto
           )
         }
         
         case 'DELETE': {
           // Remove projeto da lista
-          return projetosAtuais.filter((projeto: Projeto) => projeto.id !== update.project_id)
+          return projetosAtuais.filter((projeto: Project) => projeto.id !== update.project_id)
         }
         
         default:

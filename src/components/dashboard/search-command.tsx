@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Project, ProjectType } from '@/types/project'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
@@ -30,6 +30,11 @@ export function SearchCommand({ open, onClose, projects, loading = false }: Sear
       p.description?.toLowerCase().includes(term)
     ).slice(0, 10)
   }, [search, projects])
+
+  const handleSelectProject = useCallback((project: Project) => {
+    router.push(`/editor/${project.id}`)
+    onClose()
+  }, [router, onClose])
 
   // Resetar ao abrir
   useEffect(() => {
@@ -70,17 +75,12 @@ export function SearchCommand({ open, onClose, projects, loading = false }: Sear
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open, filteredProjects, selectedIndex])
+  }, [open, filteredProjects, selectedIndex, handleSelectProject, onClose])
 
   // Resetar índice quando filtrar
   useEffect(() => {
     setSelectedIndex(0)
   }, [search])
-
-  const handleSelectProject = (project: Project) => {
-    router.push(`/editor/${project.id}`)
-    onClose()
-  }
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
