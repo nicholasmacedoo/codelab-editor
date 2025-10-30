@@ -21,20 +21,28 @@ Significa que o enum `project_type` no banco de dados ainda não possui o valor 
 3. Clique em **SQL Editor** (no menu lateral)
 4. Clique em **New Query**
 
-### 2. Copie e Cole a Migração
+### 2. Execute a Primeira Migração (Adicionar Enum)
+
+1. Abra o arquivo `migration-step1-add-react-enum.sql` neste projeto
+2. Copie **TODO o conteúdo** do arquivo
+3. Cole no editor SQL do Supabase
+4. Clique no botão **Run** (ou pressione `Ctrl/Cmd + Enter`)
+5. Aguarde a confirmação de sucesso
+
+### 3. Execute a Segunda Migração (Restante da Estrutura)
 
 1. Abra o arquivo `migration-add-react-support.sql` neste projeto
 2. Copie **TODO o conteúdo** do arquivo
 3. Cole no editor SQL do Supabase
-
-### 3. Execute a Migração
-
-1. Clique no botão **Run** (ou pressione `Ctrl/Cmd + Enter`)
-2. Aguarde a execução (deve levar alguns segundos)
-3. Você verá mensagens como:
-   - `Valor 'react' adicionado ao enum project_type`
+4. Clique no botão **Run** (ou pressione `Ctrl/Cmd + Enter`)
+5. Aguarde a execução (deve levar alguns segundos)
+6. Você verá mensagens como:
    - `Constraint valid_project_type criada`
    - E outras confirmações
+
+**⚠️ IMPORTANTE:** As migrações devem ser executadas nesta ordem:
+1. Primeiro: `migration-step1-add-react-enum.sql`
+2. Depois: `migration-add-react-support.sql`
 
 ### 4. Verifique se Funcionou
 

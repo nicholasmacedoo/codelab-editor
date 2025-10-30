@@ -1,32 +1,20 @@
--- Migração: Adicionar suporte para projetos React
--- Execute este script no SQL Editor do Supabase
+-- ============================================================================
+-- MIGRAÇÃO PASSO 2: Adicionar suporte completo para projetos React
+-- ============================================================================
+-- Execute este script APÓS executar migration-step1-add-react-enum.sql
 
--- 1. Adicionar 'react' ao enum project_type
--- NOTA: PostgreSQL não suporta IF NOT EXISTS para ALTER TYPE ADD VALUE
--- Se já tiver 'react', este comando irá falhar silenciosamente se executado dentro de DO
-DO $$ 
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_enum 
-    WHERE enumlabel = 'react' 
-    AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'project_type')
-  ) THEN
-    ALTER TYPE project_type ADD VALUE 'react';
-    RAISE NOTICE 'Valor ''react'' adicionado ao enum project_type';
-  ELSE
-    RAISE NOTICE 'Valor ''react'' já existe no enum project_type';
-  END IF;
-END $$;
+-- IMPORTANTE: Execute PRIMEIRO o arquivo migration-step1-add-react-enum.sql
+-- que adiciona o valor 'react' ao enum. Este arquivo cria o resto da estrutura.
 
--- 2. Adicionar coluna react_dependencies para armazenar dependências do package.json
+-- 1. Adicionar coluna react_dependencies para armazenar dependências do package.json
 ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS react_dependencies JSONB DEFAULT '{}';
 
--- 3. Remover constraints que impedem projetos React
+-- 2. Remover constraints que impedem projetos React
 -- Drop constraints antigas que exigem js_code ou html_code
 ALTER TABLE public.projects DROP CONSTRAINT IF EXISTS valid_javascript_project;
 ALTER TABLE public.projects DROP CONSTRAINT IF EXISTS valid_web_project;
 
--- 4. Criar nova constraint que permite projeto React sem código obrigatório
+-- 3. Criar nova constraint que permite projeto React sem código obrigatório
 -- Para React, não é necessário ter código obrigatório aqui pois os arquivos estão na tabela react_files
 DO $$ 
 BEGIN
@@ -47,7 +35,7 @@ BEGIN
   END IF;
 END $$;
 
--- 5. Criar tabela react_files para armazenar arquivos dos projetos React
+-- 4. Criar tabela react_files para armazenar arquivos dos projetos React
 CREATE TABLE IF NOT EXISTS public.react_files (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
@@ -61,21 +49,21 @@ CREATE TABLE IF NOT EXISTS public.react_files (
   UNIQUE(project_id, path)
 );
 
--- 6. Índices para react_files
+-- 5. Índices para react_files
 CREATE INDEX IF NOT EXISTS idx_react_files_project_id ON public.react_files(project_id);
 CREATE INDEX IF NOT EXISTS idx_react_files_path ON public.react_files(project_id, path);
 
--- 7. Função para atualizar updated_at em react_files
+-- 6. Trigger para atualizar updated_at em react_files
 DROP TRIGGER IF EXISTS update_react_files_updated_at ON public.react_files;
 CREATE TRIGGER update_react_files_updated_at
   BEFORE UPDATE ON public.react_files
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
--- 8. RLS para react_files
+-- 7. RLS para react_files
 ALTER TABLE public.react_files ENABLE ROW LEVEL SECURITY;
 
--- 9. Policies para react_files
+-- 8. Policies para react_files
 -- Limpar políticas antigas se existirem
 DROP POLICY IF EXISTS "users_can_view_react_files" ON public.react_files;
 DROP POLICY IF EXISTS "users_can_manage_react_files" ON public.react_files;
@@ -102,7 +90,7 @@ CREATE POLICY "users_can_manage_react_files"
     )
   );
 
--- 10. Adicionar trigger para broadcast de mudanças em react_files
+-- 9. Função e trigger para broadcast de mudanças em react_files
 CREATE OR REPLACE FUNCTION broadcast_react_file_change()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -138,7 +126,7 @@ CREATE TRIGGER react_file_change_trigger
   AFTER INSERT OR UPDATE OR DELETE ON public.react_files
   FOR EACH ROW EXECUTE FUNCTION broadcast_react_file_change();
 
--- 11. Comentários
+-- 10. Comentários
 COMMENT ON TABLE public.react_files IS 'Arquivos dos projetos React';
 COMMENT ON COLUMN public.react_files.file_type IS 'Tipo do arquivo: jsx, js, css, json ou md';
 COMMENT ON COLUMN public.react_files.path IS 'Caminho completo do arquivo (ex: src/App.jsx)';
