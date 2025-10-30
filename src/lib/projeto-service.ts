@@ -1,6 +1,13 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { supabase, Project, Database } from './supabase'
-import { CreateProjectData, UpdateProjectData, ProjectType } from '@/types/project'
+import { 
+  CreateProjectData, 
+  CreateJavaScriptProjectData,
+  CreateWebCompleteProjectData,
+  CreateReactProjectData,
+  UpdateProjectData, 
+  ProjectType 
+} from '@/types/project'
 import { SupabaseClient } from '@supabase/supabase-js'
 
 type ProjectInsert = Database['public']['Tables']['projects']['Insert']
@@ -25,33 +32,55 @@ export class ProjetoService {
     const slug = await this.gerarSlugUnico(dados.name)
 
     // Preparar dados baseados no tipo de projeto
-    const projectData: ProjectInsert = dados.type === ProjectType.JAVASCRIPT
-      ? {
-          name: dados.name,
-          slug,
-          type: dados.type,
-          description: dados.description || null,
-          is_public: dados.is_public || false,
-          allow_edits: dados.allow_edits || false,
-          user_id: dados.user_id || null,
-          js_code: dados.js_code,
-          html_code: null,
-          css_code: null,
-          js_web_code: null
-        }
-      : {
-          name: dados.name,
-          slug,
-          type: dados.type,
-          description: dados.description || null,
-          is_public: dados.is_public || false,
-          allow_edits: dados.allow_edits || false,
-          user_id: dados.user_id || null,
-          js_code: null,
-          html_code: dados.html_code,
-          css_code: dados.css_code || '',
-          js_web_code: dados.js_web_code || ''
-        }
+    let projectData: ProjectInsert
+    
+    if (dados.type === ProjectType.JAVASCRIPT) {
+      const jsData = dados as CreateJavaScriptProjectData
+      projectData = {
+        name: dados.name,
+        slug,
+        type: dados.type,
+        description: dados.description || null,
+        is_public: dados.is_public || false,
+        allow_edits: dados.allow_edits || false,
+        user_id: dados.user_id || null,
+        js_code: jsData.js_code,
+        html_code: null,
+        css_code: null,
+        js_web_code: null
+      }
+    } else if (dados.type === ProjectType.WEB_COMPLETE) {
+      const webData = dados as CreateWebCompleteProjectData
+      projectData = {
+        name: dados.name,
+        slug,
+        type: dados.type,
+        description: dados.description || null,
+        is_public: dados.is_public || false,
+        allow_edits: dados.allow_edits || false,
+        user_id: dados.user_id || null,
+        js_code: null,
+        html_code: webData.html_code,
+        css_code: webData.css_code || '',
+        js_web_code: webData.js_web_code || ''
+      }
+    } else {
+      // REACT type
+      const reactData = dados as CreateReactProjectData
+      projectData = {
+        name: dados.name,
+        slug,
+        type: dados.type,
+        description: dados.description || null,
+        is_public: dados.is_public || false,
+        allow_edits: dados.allow_edits || false,
+        user_id: dados.user_id || null,
+        js_code: null,
+        html_code: null,
+        css_code: null,
+        js_web_code: null
+      }
+    }
 
     const { data, error } = await client
       .from('projects')

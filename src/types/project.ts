@@ -5,7 +5,8 @@
  */
 export enum ProjectType {
   JAVASCRIPT = 'javascript',
-  WEB_COMPLETE = 'web_complete'
+  WEB_COMPLETE = 'web_complete',
+  REACT = 'react'
 }
 
 /**
@@ -26,6 +27,9 @@ export interface Project {
   html_code?: string | null
   css_code?: string | null
   js_web_code?: string | null
+  
+  // Campos para React
+  react_dependencies?: Record<string, string> | null
   
   // Configurações
   is_public: boolean
@@ -52,6 +56,19 @@ export interface ProjectVersion {
   
   created_by: string | null
   created_at: string
+}
+
+/**
+ * Arquivo React em um projeto
+ */
+export interface ReactFile {
+  id: string
+  name: string
+  path: string
+  content: string
+  file_type: 'jsx' | 'js' | 'css' | 'json' | 'md'
+  created_at: string
+  updated_at: string
 }
 
 /**
@@ -83,9 +100,22 @@ export interface CreateWebCompleteProjectData {
 }
 
 /**
+ * Dados para criar um novo projeto React
+ */
+export interface CreateReactProjectData {
+  name: string
+  type: ProjectType.REACT
+  description?: string
+  react_dependencies?: Record<string, string>
+  is_public?: boolean
+  allow_edits?: boolean
+  user_id?: string | null
+}
+
+/**
  * Union type para criação de projetos
  */
-export type CreateProjectData = CreateJavaScriptProjectData | CreateWebCompleteProjectData
+export type CreateProjectData = CreateJavaScriptProjectData | CreateWebCompleteProjectData | CreateReactProjectData
 
 /**
  * Dados para atualizar um projeto JavaScript
@@ -112,9 +142,20 @@ export interface UpdateWebCompleteProjectData {
 }
 
 /**
+ * Dados para atualizar um projeto React
+ */
+export interface UpdateReactProjectData {
+  name?: string
+  description?: string
+  react_dependencies?: Record<string, string>
+  is_public?: boolean
+  allow_edits?: boolean
+}
+
+/**
  * Union type para atualização de projetos
  */
-export type UpdateProjectData = UpdateJavaScriptProjectData | UpdateWebCompleteProjectData
+export type UpdateProjectData = UpdateJavaScriptProjectData | UpdateWebCompleteProjectData | UpdateReactProjectData
 
 /**
  * Template para projetos JavaScript
@@ -136,6 +177,16 @@ export interface WebTemplate {
   html: string
   css: string
   js: string
+}
+
+/**
+ * Template para projetos React
+ */
+export interface ReactTemplate {
+  id: string
+  name: string
+  description: string
+  files: Record<string, string>
 }
 
 /**
@@ -557,6 +608,322 @@ button:hover {
   // Limpar formulário
   document.getElementById('contact-form').reset();
 });`
+  }
+]
+
+/**
+ * Templates disponíveis para React
+ */
+export const REACT_TEMPLATES: ReactTemplate[] = [
+  {
+    id: 'blank',
+    name: 'Blank App',
+    description: 'App React em branco para começar do zero',
+    files: {
+      'src/App.jsx': `import React from 'react'
+
+function App() {
+  return (
+    <div className="app">
+      <h1>Meu App React</h1>
+      <p>Comece a editar para ver as mudanças!</p>
+    </div>
+  )
+}
+
+export default App`,
+      'src/index.jsx': `import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App'
+import './styles.css'
+
+const root = ReactDOM.createRoot(document.getElementById('root'))
+root.render(<App />)`,
+      'src/styles.css': `.app {
+  font-family: Arial, sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1 {
+  color: #333;
+}`,
+      'public/index.html': `<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meu App React</title>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>`,
+      'package.json': `{
+  "name": "meu-app-react",
+  "version": "1.0.0",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}`
+    }
+  },
+  {
+    id: 'counter',
+    name: 'Counter App',
+    description: 'App de contador simples com useState',
+    files: {
+      'src/App.jsx': `import React, { useState } from 'react'
+
+function App() {
+  const [count, setCount] = useState(0)
+  
+  return (
+    <div className="app">
+      <h1>Contador</h1>
+      <div className="counter">
+        <button onClick={() => setCount(count - 1)}>-</button>
+        <span className="count">{count}</span>
+        <button onClick={() => setCount(count + 1)}>+</button>
+      </div>
+      <button onClick={() => setCount(0)}>Reset</button>
+    </div>
+  )
+}
+
+export default App`,
+      'src/index.jsx': `import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App'
+import './styles.css'
+
+const root = ReactDOM.createRoot(document.getElementById('root'))
+root.render(<App />)`,
+      'src/styles.css': `.app {
+  font-family: Arial, sans-serif;
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.counter {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.count {
+  font-size: 48px;
+  font-weight: bold;
+  min-width: 80px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 24px;
+  cursor: pointer;
+  border: 2px solid #333;
+  background: white;
+  border-radius: 5px;
+}
+
+button:hover {
+  background: #f0f0f0;
+}`,
+      'public/index.html': `<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contador React</title>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>`,
+      'package.json': `{
+  "name": "contador-react",
+  "version": "1.0.0",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}`
+    }
+  },
+  {
+    id: 'todo',
+    name: 'Todo List',
+    description: 'Lista de tarefas com múltiplos componentes',
+    files: {
+      'src/App.jsx': `import React, { useState } from 'react'
+import TodoList from './components/TodoList'
+
+function App() {
+  const [todos, setTodos] = useState([])
+  const [input, setInput] = useState('')
+  
+  const addTodo = () => {
+    if (input.trim()) {
+      setTodos([...todos, { id: Date.now(), text: input, done: false }])
+      setInput('')
+    }
+  }
+  
+  const toggleTodo = (id) => {
+    setTodos(todos.map(todo => 
+      todo.id === id ? { ...todo, done: !todo.done } : todo
+    ))
+  }
+  
+  const deleteTodo = (id) => {
+    setTodos(todos.filter(todo => todo.id !== id))
+  }
+  
+  return (
+    <div className="app">
+      <h1>📝 Lista de Tarefas</h1>
+      <div className="input-group">
+        <input 
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && addTodo()}
+          placeholder="Adicionar nova tarefa..."
+        />
+        <button onClick={addTodo}>Adicionar</button>
+      </div>
+      <TodoList 
+        todos={todos} 
+        onToggle={toggleTodo}
+        onDelete={deleteTodo}
+      />
+    </div>
+  )
+}
+
+export default App`,
+      'src/components/TodoList.jsx': `import React from 'react'
+
+function TodoList({ todos, onToggle, onDelete }) {
+  return (
+    <ul className="todo-list">
+      {todos.map(todo => (
+        <li key={todo.id} className={todo.done ? 'done' : ''}>
+          <input 
+            type="checkbox" 
+            checked={todo.done}
+            onChange={() => onToggle(todo.id)}
+          />
+          <span>{todo.text}</span>
+          <button onClick={() => onDelete(todo.id)}>🗑️</button>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export default TodoList`,
+      'src/index.jsx': `import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App'
+import './styles.css'
+
+const root = ReactDOM.createRoot(document.getElementById('root'))
+root.render(<App />)`,
+      'src/styles.css': `.app {
+  font-family: Arial, sans-serif;
+  max-width: 600px;
+  margin: 50px auto;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+}
+
+.input-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+.todo-list {
+  list-style: none;
+  padding: 0;
+}
+
+.todo-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.todo-list li.done span {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.todo-list li button {
+  margin-left: auto;
+  background: #dc3545;
+  padding: 5px 10px;
+}
+
+.todo-list li button:hover {
+  background: #c82333;
+}`,
+      'public/index.html': `<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Todo List React</title>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>`,
+      'package.json': `{
+  "name": "todo-list-react",
+  "version": "1.0.0",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}`
+    }
   }
 ]
 
