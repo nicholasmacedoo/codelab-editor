@@ -2,7 +2,21 @@
 -- Execute este script no SQL Editor do Supabase
 
 -- 1. Adicionar 'react' ao enum project_type
-ALTER TYPE project_type ADD VALUE IF NOT EXISTS 'react';
+-- NOTA: PostgreSQL não suporta IF NOT EXISTS para ALTER TYPE ADD VALUE
+-- Se já tiver 'react', este comando irá falhar silenciosamente se executado dentro de DO
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum 
+    WHERE enumlabel = 'react' 
+    AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'project_type')
+  ) THEN
+    ALTER TYPE project_type ADD VALUE 'react';
+    RAISE NOTICE 'Valor ''react'' adicionado ao enum project_type';
+  ELSE
+    RAISE NOTICE 'Valor ''react'' já existe no enum project_type';
+  END IF;
+END $$;
 
 -- 2. Adicionar coluna react_dependencies para armazenar dependências do package.json
 ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS react_dependencies JSONB DEFAULT '{}';
@@ -14,12 +28,24 @@ ALTER TABLE public.projects DROP CONSTRAINT IF EXISTS valid_web_project;
 
 -- 4. Criar nova constraint que permite projeto React sem código obrigatório
 -- Para React, não é necessário ter código obrigatório aqui pois os arquivos estão na tabela react_files
-ALTER TABLE public.projects ADD CONSTRAINT valid_project_type 
-  CHECK (
-    (type = 'javascript' AND js_code IS NOT NULL) OR
-    (type = 'web_complete' AND html_code IS NOT NULL) OR
-    (type = 'react')
-  );
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE constraint_name = 'valid_project_type' 
+    AND table_name = 'projects'
+  ) THEN
+    ALTER TABLE public.projects ADD CONSTRAINT valid_project_type 
+    CHECK (
+      (type = 'javascript' AND js_code IS NOT NULL) OR
+      (type = 'web_complete' AND html_code IS NOT NULL) OR
+      (type = 'react')
+    );
+    RAISE NOTICE 'Constraint valid_project_type criada';
+  ELSE
+    RAISE NOTICE 'Constraint valid_project_type já existe';
+  END IF;
+END $$;
 
 -- 5. Criar tabela react_files para armazenar arquivos dos projetos React
 CREATE TABLE IF NOT EXISTS public.react_files (
@@ -40,6 +66,7 @@ CREATE INDEX IF NOT EXISTS idx_react_files_project_id ON public.react_files(proj
 CREATE INDEX IF NOT EXISTS idx_react_files_path ON public.react_files(project_id, path);
 
 -- 7. Função para atualizar updated_at em react_files
+DROP TRIGGER IF EXISTS update_react_files_updated_at ON public.react_files;
 CREATE TRIGGER update_react_files_updated_at
   BEFORE UPDATE ON public.react_files
   FOR EACH ROW
@@ -49,6 +76,10 @@ CREATE TRIGGER update_react_files_updated_at
 ALTER TABLE public.react_files ENABLE ROW LEVEL SECURITY;
 
 -- 9. Policies para react_files
+-- Limpar políticas antigas se existirem
+DROP POLICY IF EXISTS "users_can_view_react_files" ON public.react_files;
+DROP POLICY IF EXISTS "users_can_manage_react_files" ON public.react_files;
+
 -- Usuários podem ver arquivos de projetos que eles podem ver
 CREATE POLICY "users_can_view_react_files"
   ON public.react_files FOR SELECT
@@ -102,6 +133,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS react_file_change_trigger ON public.react_files;
 CREATE TRIGGER react_file_change_trigger
   AFTER INSERT OR UPDATE OR DELETE ON public.react_files
   FOR EACH ROW EXECUTE FUNCTION broadcast_react_file_change();
