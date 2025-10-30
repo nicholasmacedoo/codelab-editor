@@ -4,9 +4,11 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProjetoService } from '@/lib/projeto-service'
-import { Project, ProjectType } from '@/types/project'
+import { ReactFileService } from '@/lib/react-file-service'
+import { Project, ProjectType, ReactFile } from '@/types/project'
 import { JavaScriptEditor } from '@/components/editor/javascript-editor'
 import { WebCompleteEditor } from '@/components/editor/web-complete-editor'
+import { ReactEditor } from '@/components/editor/react-editor'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -18,6 +20,7 @@ import {
   Loader2,
   Code2,
   Globe,
+  Layers,
   CheckCircle2,
   AlertCircle
 } from 'lucide-react'
@@ -48,6 +51,10 @@ export default function EditorPage() {
   const [cssCode, setCssCode] = useState('')
   const [jsWebCode, setJsWebCode] = useState('')
 
+  // Estados para React
+  const [reactFiles, setReactFiles] = useState<ReactFile[]>([])
+  const [selectedFile, setSelectedFile] = useState<ReactFile | undefined>(undefined)
+
   // Nome do projeto editável
   const [projectName, setProjectName] = useState('')
 
@@ -72,7 +79,7 @@ export default function EditorPage() {
       if (projectData.type === ProjectType.JAVASCRIPT) {
         setJsCode(projectData.js_code || '')
         lastSavedRef.current = projectData.js_code || ''
-      } else {
+      } else if (projectData.type === ProjectType.WEB_COMPLETE) {
         setHtmlCode(projectData.html_code || '')
         setCssCode(projectData.css_code || '')
         setJsWebCode(projectData.js_web_code || '')
@@ -81,6 +88,15 @@ export default function EditorPage() {
           css: projectData.css_code,
           js: projectData.js_web_code
         })
+      } else if (projectData.type === ProjectType.REACT) {
+        // Carregar arquivos React
+        const files = await ReactFileService.listarArquivos(projectData.id)
+        setReactFiles(files)
+        if (files.length > 0) {
+          // Selecionar primeiro arquivo JSX ou index
+          const indexFile = files.find(f => f.path.includes('index')) || files[0]
+          setSelectedFile(indexFile)
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar projeto:', error)
@@ -191,6 +207,50 @@ export default function EditorPage() {
     }
   }, [jsCode, htmlCode, cssCode, jsWebCode, projectName, project, saveProject])
 
+  // Funções para gerenciar arquivos React
+  const handleFileUpdate = async (fileId: string, content: string) => {
+    try {
+      await ReactFileService.atualizarArquivo(fileId, { content })
+      setReactFiles(files => files.map(f => f.id === fileId ? { ...f, content } : f))
+    } catch (error) {
+      console.error('Erro ao atualizar arquivo:', error)
+      toast.error('Erro ao salvar arquivo')
+    }
+  }
+
+  const handleNewFile = () => {
+    // TODO: Implementar modal para criar novo arquivo
+    toast.info('Funcionalidade de criar arquivo em breve')
+  }
+
+  const handleNewFolder = () => {
+    // TODO: Implementar funcionalidade de criar pasta
+    toast.info('Funcionalidade de criar pasta em breve')
+  }
+
+  const handleRenameFile = async () => {
+    // TODO: Implementar modal para renomear arquivo
+    toast.info('Funcionalidade de renomear em breve')
+  }
+
+  const handleDeleteFile = async (file: ReactFile) => {
+    if (!confirm(`Tem certeza que deseja deletar ${file.name}?`)) {
+      return
+    }
+
+    try {
+      await ReactFileService.deletarArquivo(file.id)
+      setReactFiles(files => files.filter(f => f.id !== file.id))
+      if (selectedFile?.id === file.id) {
+        setSelectedFile(undefined)
+      }
+      toast.success('Arquivo deletado')
+    } catch (error) {
+      console.error('Erro ao deletar arquivo:', error)
+      toast.error('Erro ao deletar arquivo')
+    }
+  }
+
   const handleShare = async (config: ConfiguracaoCompartilhamento) => {
     if (!project) return
 
@@ -260,6 +320,7 @@ export default function EditorPage() {
   }
 
   const isJavaScript = project.type === ProjectType.JAVASCRIPT
+  const isWebComplete = project.type === ProjectType.WEB_COMPLETE
 
   return (
     <div className="h-screen flex flex-col bg-gray-900">
@@ -284,17 +345,24 @@ export default function EditorPage() {
               <Badge variant="secondary" className={
                 isJavaScript 
                   ? 'bg-yellow-500/10 text-yellow-600' 
-                  : 'bg-blue-500/10 text-blue-600'
+                  : isWebComplete
+                  ? 'bg-blue-500/10 text-blue-600'
+                  : 'bg-cyan-500/10 text-cyan-600'
               }>
                 {isJavaScript ? (
                   <>
                     <Code2 className="w-3 h-3 mr-1" />
                     JavaScript
                   </>
-                ) : (
+                ) : isWebComplete ? (
                   <>
                     <Globe className="w-3 h-3 mr-1" />
                     Web Completo
+                  </>
+                ) : (
+                  <>
+                    <Layers className="w-3 h-3 mr-1" />
+                    React
                   </>
                 )}
               </Badge>
@@ -354,7 +422,7 @@ export default function EditorPage() {
             onChange={setJsCode}
             onSave={() => saveProject(true)}
           />
-        ) : (
+        ) : isWebComplete ? (
           <WebCompleteEditor
             html={htmlCode}
             css={cssCode}
@@ -363,6 +431,17 @@ export default function EditorPage() {
             onCssChange={setCssCode}
             onJsChange={setJsWebCode}
             onSave={() => saveProject(true)}
+          />
+        ) : (
+          <ReactEditor
+            files={reactFiles}
+            selectedFile={selectedFile}
+            onFileSelect={setSelectedFile}
+            onFileUpdate={handleFileUpdate}
+            onNewFile={handleNewFile}
+            onNewFolder={handleNewFolder}
+            onRenameFile={handleRenameFile}
+            onDeleteFile={handleDeleteFile}
           />
         )}
       </div>

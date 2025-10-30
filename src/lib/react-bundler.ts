@@ -142,7 +142,7 @@ const resolveImports = (files: ReactFiles, entryPoint: string): string => {
     const importRegex = /import\s+([^'"]+?)\s+from\s+['"](.+?)['"]/g
     const imports = [...content.matchAll(importRegex)]
 
-    imports.forEach(([_fullMatch, _imports, importPath]) => {
+    imports.forEach(([_fullMatch, , importPath]) => {
       const resolvedPath = resolveImportPath(path, importPath)
 
       if (files[resolvedPath]) {

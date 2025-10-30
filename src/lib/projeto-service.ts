@@ -4,7 +4,6 @@ import {
   CreateProjectData, 
   CreateJavaScriptProjectData,
   CreateWebCompleteProjectData,
-  CreateReactProjectData,
   UpdateProjectData, 
   ProjectType 
 } from '@/types/project'
@@ -66,7 +65,6 @@ export class ProjetoService {
       }
     } else {
       // REACT type
-      const reactData = dados as CreateReactProjectData
       projectData = {
         name: dados.name,
         slug,

@@ -31,7 +31,7 @@ interface FileExplorerProps {
   selectedFileId?: string
   onNewFile: () => void
   onNewFolder: () => void
-  onRenameFile: (file: ReactFile) => void
+  onRenameFile: () => void
   onDeleteFile: (file: ReactFile) => void
 }
 
@@ -195,7 +195,7 @@ export function FileExplorer({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => node.file && onRenameFile(node.file)}>
+              <DropdownMenuItem onClick={onRenameFile}>
                 <Edit className="w-4 h-4 mr-2" />
                 Renomear
               </DropdownMenuItem>
