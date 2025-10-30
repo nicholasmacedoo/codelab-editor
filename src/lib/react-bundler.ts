@@ -146,19 +146,19 @@ const resolveImports = (files: ReactFiles, entryPoint: string): string => {
       const resolvedPath = resolveImportPath(path, importPath)
 
       if (files[resolvedPath]) {
-        // Arquivo local encontrado - adicionar recursivamente
+        // Arquivo local encontrado - adicionar recursivamente ANTES deste arquivo
         addFile(resolvedPath)
       } else {
-        // Import externo - remover do bundle
-        // (será carregado via CDN se necessário)
+        // Import externo (React, etc) - manter o import, React será carregado via CDN
+        return
       }
 
-      // Remover statement de import
+      // Remover statement de import para arquivos locais (já foi resolvido)
       content = content.replace(_fullMatch, '')
     })
 
-    bundle += `\n// File: ${path}\n`
-    bundle += content + '\n'
+    // Adicionar arquivo ao bundle
+    bundle += `\n// File: ${path}\n${content}\n`
   }
 
   addFile(entryPoint)
@@ -194,7 +194,7 @@ export const bundleReactApp = async (
     console.log('🔍 Arquivos para bundle:', Object.keys(filesMap))
     console.log('🎯 Entry point:', entryPoint)
 
-    // Transpilar todos os arquivos JSX
+    // PRIMEIRO: Transpilar cada arquivo individualmente
     const transpiledFiles: ReactFiles = {}
     Object.entries(filesMap).forEach(([path, content]) => {
       if (path.endsWith('.jsx') || path.endsWith('.js')) {
@@ -210,12 +210,12 @@ export const bundleReactApp = async (
       }
     })
 
-    // Resolver imports e criar bundle
+    // SEGUNDO: Resolver imports no código já transpilado
     const bundledCode = resolveImports(transpiledFiles, entryPoint)
     console.log('📦 Bundle criado, tamanho:', bundledCode.length)
 
     // Pegar CSS
-    const cssFile = transpiledFiles['src/styles.css'] || ''
+    const cssFile = filesMap['src/styles.css'] || ''
 
     // Gerar HTML final com React CDN
     const fullHtml = `
