@@ -1,8 +1,8 @@
 # 🚀 LAB365 CodeLab Editor - Multi-Linguagem
 
-> **IDE educacional multi-linguagem desenvolvida para o LAB365 + SENAI. Suporta projetos JavaScript Puro e Web Completo (HTML+CSS+JS) com preview ao vivo, compartilhamento em tempo real e ferramentas modernas para facilitar o aprendizado de programação.**
+> **IDE educacional multi-linguagem desenvolvida para o LAB365 + SENAI. Suporta projetos JavaScript Puro, Web Completo (HTML+CSS+JS) e React com preview ao vivo, compartilhamento em tempo real e ferramentas modernas para facilitar o aprendizado de programação.**
 
-> 🎉 **NOVO:** Agora com suporte para projetos Web Completo com HTML, CSS e JavaScript!
+> 🎉 **NOVO:** Agora com suporte para projetos React com transpilação client-side e hot reload!
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.5.4-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.1.0-blue?style=for-the-badge&logo=react)](https://reactjs.org/)
@@ -12,7 +12,7 @@
 
 ## ✨ Funcionalidades
 
-### 🎨 **Dois Tipos de Projetos**
+### 🎨 **Três Tipos de Projetos**
 
 **JavaScript Puro:**
 - Monaco Editor com syntax highlighting
@@ -25,6 +25,14 @@
 - Preview ao vivo com auto-refresh (500ms debounce)
 - Desenvolvimento web interativo
 - Exportação de projetos completos
+
+**React:**
+- File Explorer para múltiplos arquivos
+- Transpilação client-side com Babel Standalone
+- Hot reload instantâneo
+- Suporte a JSX, JS, CSS, JSON, MD
+- Templates prontos (Blank, Counter, Todo App)
+- Bundling automático de imports
 
 ### 🎯 **Dashboard Moderno**
 - Grid responsivo com cards de projetos
