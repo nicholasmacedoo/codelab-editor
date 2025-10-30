@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProjetoService } from '@/lib/projeto-service'
-import { Project, ProjectType, JAVASCRIPT_TEMPLATES, WEB_TEMPLATES } from '@/types/project'
+import { ReactFileService } from '@/lib/react-file-service'
+import { Project, ProjectType, JAVASCRIPT_TEMPLATES, WEB_TEMPLATES, REACT_TEMPLATES } from '@/types/project'
 import { ProjectGrid } from '@/components/dashboard/project-grid'
 import { NewProjectDialog } from '@/components/dashboard/new-project-dialog'
 import { DeleteProjectDialog } from '@/components/dashboard/delete-project-dialog'
@@ -18,6 +19,7 @@ import {
   LogIn,
   Code2,
   Globe,
+  Layers,
   Command
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -130,18 +132,37 @@ export default function DashboardPage() {
       if (data.type === ProjectType.JAVASCRIPT) {
         const template = JAVASCRIPT_TEMPLATES.find(t => t.id === data.template)
         projectData.js_code = template?.code || '// Seu código JavaScript aqui\nconsole.log("Olá, mundo!");'
-      } else {
+      } else if (data.type === ProjectType.WEB_COMPLETE) {
         const template = WEB_TEMPLATES.find(t => t.id === data.template)
         projectData.html_code = template?.html || '<!DOCTYPE html>\n<html>\n<head>\n  <title>Meu Projeto</title>\n</head>\n<body>\n  <h1>Olá, Mundo!</h1>\n</body>\n</html>'
         projectData.css_code = template?.css || ''
         projectData.js_web_code = template?.js || ''
       }
+      // React projetos não precisam de campos adicionais aqui - serão criados os arquivos depois
 
       // Debug: Ver dados sendo enviados
       console.log('Criando projeto com dados:', projectData)
       
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const newProject = await ProjetoService.criarProjeto(projectData as any)
+      
+      // Se for projeto React, criar os arquivos do template
+      if (data.type === ProjectType.REACT) {
+        const template = REACT_TEMPLATES.find(t => t.id === data.template)
+        if (template) {
+          const files = Object.entries(template.files).map(([path, content]) => ({
+            name: path.split('/').pop() || 'file',
+            path,
+            content,
+            file_type: path.endsWith('.jsx') ? 'jsx' as const :
+                       path.endsWith('.js') ? 'js' as const :
+                       path.endsWith('.css') ? 'css' as const :
+                       path.endsWith('.json') ? 'json' as const : 'md' as const
+          }))
+          
+          await ReactFileService.criarArquivosEmLote(newProject.id, files)
+        }
+      }
       
       // Debug: Ver projeto retornado
       console.log('Projeto criado:', newProject)
@@ -202,7 +223,8 @@ export default function DashboardPage() {
     return {
       total: projects.length,
       javascript: projects.filter(p => p.type === ProjectType.JAVASCRIPT).length,
-      web: projects.filter(p => p.type === ProjectType.WEB_COMPLETE).length
+      web: projects.filter(p => p.type === ProjectType.WEB_COMPLETE).length,
+      react: projects.filter(p => p.type === ProjectType.REACT).length
     }
   }
 
@@ -304,6 +326,10 @@ export default function DashboardPage() {
               <TabsTrigger value={ProjectType.WEB_COMPLETE}>
                 <Globe className="w-4 h-4 mr-2" />
                 Web ({counts.web})
+              </TabsTrigger>
+              <TabsTrigger value={ProjectType.REACT}>
+                <Layers className="w-4 h-4 mr-2" />
+                React ({counts.react})
               </TabsTrigger>
             </TabsList>
           </Tabs>

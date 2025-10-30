@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { 
   ProjectType, 
   JAVASCRIPT_TEMPLATES, 
-  WEB_TEMPLATES
+  WEB_TEMPLATES,
+  REACT_TEMPLATES
 } from '@/types/project'
 import {
   Dialog,
@@ -26,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Loader2, Code2, Globe } from 'lucide-react'
+import { Loader2, Code2, Globe, Layers } from 'lucide-react'
 
 interface NewProjectDialogProps {
   open: boolean
@@ -94,7 +95,13 @@ export function NewProjectDialog({
   }
 
   const getTemplates = () => {
-    return type === ProjectType.JAVASCRIPT ? JAVASCRIPT_TEMPLATES : WEB_TEMPLATES
+    if (type === ProjectType.JAVASCRIPT) {
+      return JAVASCRIPT_TEMPLATES
+    } else if (type === ProjectType.WEB_COMPLETE) {
+      return WEB_TEMPLATES
+    } else {
+      return REACT_TEMPLATES
+    }
   }
 
   const getSelectedTemplate = () => {
@@ -201,6 +208,34 @@ export function NewProjectDialog({
                       </div>
                       <p className="text-sm text-muted-foreground">
                         HTML, CSS e JavaScript com preview ao vivo. Perfeito para criar páginas web interativas e projetos visuais.
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* React */}
+                  <label
+                    htmlFor="type-react"
+                    className={`
+                      flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all
+                      ${type === ProjectType.REACT 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-primary/50 hover:bg-accent'
+                      }
+                      ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+                    `}
+                  >
+                    <RadioGroupItem 
+                      value={ProjectType.REACT} 
+                      id="type-react"
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Layers className="w-5 h-5 text-cyan-600" />
+                        <span className="font-semibold">React</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Componentes React com JSX e preview ao vivo. Ideal para aprender React, hooks e desenvolvimento moderno.
                       </p>
                     </div>
                   </label>
