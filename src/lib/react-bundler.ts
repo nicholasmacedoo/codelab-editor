@@ -190,12 +190,21 @@ export const bundleReactApp = async (
 
     // Converter para mapa
     const filesMap = filesToMap(files)
+    
+    console.log('🔍 Arquivos para bundle:', Object.keys(filesMap))
+    console.log('🎯 Entry point:', entryPoint)
 
     // Transpilar todos os arquivos JSX
     const transpiledFiles: ReactFiles = {}
     Object.entries(filesMap).forEach(([path, content]) => {
       if (path.endsWith('.jsx') || path.endsWith('.js')) {
-        transpiledFiles[path] = transpileFile(content, path)
+        try {
+          transpiledFiles[path] = transpileFile(content, path)
+          console.log(`✅ Transpilado: ${path}`)
+        } catch (error) {
+          console.error(`❌ Erro ao transpilar ${path}:`, error)
+          transpiledFiles[path] = content
+        }
       } else {
         transpiledFiles[path] = content
       }
@@ -203,6 +212,7 @@ export const bundleReactApp = async (
 
     // Resolver imports e criar bundle
     const bundledCode = resolveImports(transpiledFiles, entryPoint)
+    console.log('📦 Bundle criado, tamanho:', bundledCode.length)
 
     // Pegar CSS
     const cssFile = transpiledFiles['src/styles.css'] || ''
@@ -221,10 +231,12 @@ export const bundleReactApp = async (
   <body>
     <div id="root"></div>
     <script>
+      console.log('🚀 Iniciando aplicação React...');
       try {
         ${bundledCode}
+        console.log('✅ Aplicação React carregada com sucesso');
       } catch (error) {
-        console.error('Erro ao executar aplicação React:', error);
+        console.error('❌ Erro ao executar aplicação React:', error);
         document.getElementById('root').innerHTML = '<div style="padding: 20px; color: red;"><h2>Erro ao carregar aplicação</h2><pre>' + error.message + '</pre></div>';
       }
     </script>
@@ -233,7 +245,7 @@ export const bundleReactApp = async (
 
     return { code: fullHtml }
   } catch (error) {
-    console.error('Erro no bundle React:', error)
+    console.error('❌ Erro no bundle React:', error)
     return { 
       code: '', 
       error: error instanceof Error ? error : new Error('Erro desconhecido no bundling') 
