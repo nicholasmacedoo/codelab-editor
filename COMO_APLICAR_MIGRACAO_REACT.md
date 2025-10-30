@@ -2,7 +2,7 @@
 
 Este guia explica como aplicar a migração para habilitar projetos React no seu banco de dados Supabase.
 
-## ⚠️ Erro Atual
+## ⚠️ ERRO COMUM
 
 Se você está vendo este erro:
 
@@ -10,7 +10,15 @@ Se você está vendo este erro:
 Erro ao criar projeto: invalid input value for enum project_type: "react"
 ```
 
-Significa que o enum `project_type` no banco de dados ainda não possui o valor `"react"`.
+OU
+
+```
+ERROR: 55P04: unsafe use of new value "react" of enum type project_type
+```
+
+**Significa:** O enum `project_type` no banco de dados ainda não possui o valor `"react"`.
+
+**Solução:** Execute as duas migrações SQL na ordem correta (veja abaixo).
 
 ## 📋 Passo a Passo
 
