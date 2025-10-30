@@ -935,6 +935,20 @@ export interface LocalProject extends Project {
 }
 
 /**
+ * Arquivo React com campos do banco
+ */
+export interface ReactFileRow {
+  id: string
+  project_id: string
+  name: string
+  path: string
+  content: string
+  file_type: 'jsx' | 'js' | 'css' | 'json' | 'md'
+  created_at: string
+  updated_at: string
+}
+
+/**
  * Database types para Supabase
  */
 export interface Database {
@@ -949,6 +963,11 @@ export interface Database {
         Row: ProjectVersion
         Insert: Omit<ProjectVersion, 'id' | 'created_at'>
         Update: Partial<Omit<ProjectVersion, 'id' | 'created_at'>>
+      }
+      react_files: {
+        Row: ReactFileRow
+        Insert: Omit<ReactFileRow, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<ReactFileRow, 'id' | 'created_at'>>
       }
     }
   }
