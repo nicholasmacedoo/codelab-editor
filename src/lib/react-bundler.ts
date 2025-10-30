@@ -221,7 +221,12 @@ export const bundleReactApp = async (
   <body>
     <div id="root"></div>
     <script>
-      ${bundledCode}
+      try {
+        ${bundledCode}
+      } catch (error) {
+        console.error('Erro ao executar aplicação React:', error);
+        document.getElementById('root').innerHTML = '<div style="padding: 20px; color: red;"><h2>Erro ao carregar aplicação</h2><pre>' + error.message + '</pre></div>';
+      }
     </script>
   </body>
 </html>`

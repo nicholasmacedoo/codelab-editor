@@ -86,12 +86,33 @@ export function ReactEditor({
   useEffect(() => {
     if (previewHtml && previewRef.current) {
       const iframe = previewRef.current
-      const doc = iframe.contentDocument || iframe.contentWindow?.document
       
-      if (doc) {
-        doc.open()
-        doc.write(previewHtml)
-        doc.close()
+      try {
+        // Aguardar iframe carregar antes de acessar document
+        if (!iframe.contentDocument && iframe.contentWindow) {
+          // Tentar acessar após um pequeno delay
+          setTimeout(() => {
+            try {
+              const doc = iframe.contentDocument || iframe.contentWindow?.document
+              if (doc) {
+                doc.open()
+                doc.write(previewHtml)
+                doc.close()
+              }
+            } catch (error) {
+              console.warn('Erro ao atualizar iframe (tentativa 2):', error)
+            }
+          }, 50)
+        } else {
+          const doc = iframe.contentDocument || iframe.contentWindow?.document
+          if (doc) {
+            doc.open()
+            doc.write(previewHtml)
+            doc.close()
+          }
+        }
+      } catch (error) {
+        console.warn('Erro ao atualizar iframe:', error)
       }
     }
   }, [previewHtml])
@@ -140,6 +161,7 @@ export function ReactEditor({
           ref={previewRef}
           className="flex-1 w-full border-0 bg-white"
           title="Preview"
+          sandbox="allow-scripts allow-same-origin"
         />
       </div>
     )
@@ -253,7 +275,7 @@ export function ReactEditor({
           ref={previewRef}
           className="flex-1 w-full border-0 bg-white"
           title="Preview"
-          sandbox="allow-scripts"
+          sandbox="allow-scripts allow-same-origin"
         />
       </div>
     </div>
