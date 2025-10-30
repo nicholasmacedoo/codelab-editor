@@ -14,6 +14,7 @@ import {
 import { 
   Code2, 
   Globe, 
+  Layers,
   MoreVertical, 
   Eye, 
   Trash2, 
@@ -41,22 +42,26 @@ export function ProjectCard({
   onShare 
 }: ProjectCardProps) {
   const isJavaScript = project.type === ProjectType.JAVASCRIPT
+  const isWebComplete = project.type === ProjectType.WEB_COMPLETE
+  const isReact = project.type === ProjectType.REACT
   const isPublic = project.is_public
 
   const getTypeIcon = () => {
-    return isJavaScript ? (
-      <Code2 className="w-4 h-4" />
-    ) : (
-      <Globe className="w-4 h-4" />
-    )
+    if (isJavaScript) return <Code2 className="w-4 h-4" />
+    if (isWebComplete) return <Globe className="w-4 h-4" />
+    return <Layers className="w-4 h-4" />
   }
 
   const getTypeLabel = () => {
-    return isJavaScript ? 'JavaScript' : 'Web Completo'
+    if (isJavaScript) return 'JavaScript'
+    if (isWebComplete) return 'Web Completo'
+    return 'React'
   }
 
   const getTypeColor = () => {
-    return isJavaScript ? 'bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20' : 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20'
+    if (isJavaScript) return 'bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20'
+    if (isWebComplete) return 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20'
+    return 'bg-cyan-500/10 text-cyan-600 hover:bg-cyan-500/20'
   }
 
   const formatDate = (dateString: string) => {
