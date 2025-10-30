@@ -7,5 +7,5 @@
 -- Adicionar 'react' ao enum project_type
 ALTER TYPE project_type ADD VALUE 'react';
 
--- Após executar este comando, execute o migration-step2-add-react-support.sql
+-- Após executar este comando, execute o migration-add-react-support.sql
 
