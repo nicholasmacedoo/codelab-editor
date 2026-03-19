@@ -35,7 +35,7 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
+        <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full text-slate-300 hover:text-white hover:bg-slate-700/50">
           <User className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>

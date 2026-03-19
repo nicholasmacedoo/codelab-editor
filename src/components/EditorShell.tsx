@@ -266,7 +266,7 @@ export function EditorShell() {
       id: Date.now().toString(),
       timestamp: new Date(),
       type: 'error',
-      args: [error],
+      args: [{ __type: 'string', value: error }],
       stack
     }
     setLogs(prev => [...prev, errorEntry])
@@ -640,7 +640,6 @@ export function EditorShell() {
               onClear={limparConsole}
               isExecuting={isExecuting}
               executionTime={executionTime}
-              compact={layoutMode === 'right' && consoleSize <= 560}
             />
           </div>
         )}

@@ -6,7 +6,8 @@ import { Project, ProjectType } from '@/types/project'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Code2, Globe, Search, Loader2 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Code2, Globe, Search } from 'lucide-react'
 
 interface SearchCommandProps {
   open: boolean
@@ -104,8 +105,14 @@ export function SearchCommand({ open, onClose, projects, loading = false }: Sear
         {/* Lista de resultados */}
         <div className="max-h-[400px] overflow-y-auto">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <div className="py-2 space-y-1">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center gap-3 px-4 py-3">
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-4 flex-1 max-w-[200px]" />
+                  <Skeleton className="h-4 w-16 rounded" />
+                </div>
+              ))}
             </div>
           ) : filteredProjects.length === 0 ? (
             <div className="text-center py-12">

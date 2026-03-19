@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "labcode - Editor JavaScript - Lab365",
   description: "Editor de JavaScript exclusivo para turmas Lab365 — execute código em tempo real e aprenda com feedback instantâneo",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

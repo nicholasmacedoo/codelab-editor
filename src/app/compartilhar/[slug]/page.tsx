@@ -8,6 +8,7 @@ import { JavaScriptEditor } from '@/components/editor/javascript-editor'
 import { WebCompleteEditor } from '@/components/editor/web-complete-editor'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { 
   Copy, 
   ExternalLink, 
@@ -199,10 +200,25 @@ ${localCode.jsWeb || ''}
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Carregando projeto...</p>
+      <div className="h-screen flex flex-col bg-[#0B1120]">
+        <header className="flex-shrink-0 border-b border-slate-800/60 bg-slate-800/30">
+          <div className="px-6 py-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              <Skeleton className="h-6 w-24 rounded-md" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-4 w-36" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-24 rounded-lg" />
+              <Skeleton className="h-9 w-9 rounded-full" />
+            </div>
+          </div>
+        </header>
+        <div className="flex-1 flex min-h-0">
+          <Skeleton className="flex-1 rounded-none" />
+          <Skeleton className="w-[400px] flex-shrink-0 rounded-none" />
         </div>
       </div>
     )

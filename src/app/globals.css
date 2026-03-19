@@ -102,3 +102,15 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Editor: remover artefatos de branding (ex.: logo/watermark) */
+.labcode-editor-wrap .monaco-editor .monaco-editor-overlaymessage,
+.labcode-editor-wrap [class*="watermark"],
+.labcode-editor-wrap [class*="branding"] {
+  display: none !important;
+}
+
+/* Editor + Console: layout elástico ao zoom (125%, 150%, 200%) — dois painéis estáveis, fontes em rem */
+[data-editor-zoom-friendly] {
+  overflow: hidden;
+}

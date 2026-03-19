@@ -19,33 +19,83 @@ const originalConsole = {
   timeEnd: console.timeEnd
 };
 
-// Função para enviar logs para o thread principal
+function extractRawLine(stack) {
+  if (!stack) return null;
+  var lines = stack.split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    var match = lines[i].match(/(?:Function>|<anonymous>):(\d+):(\d+)/);
+    if (match) return parseInt(match[1], 10);
+  }
+  return null;
+}
+
+// Calibração: usa o mesmo formato do executeCode ("use strict";\n + código)
+// para descobrir qual raw line o engine reporta para a linha 1 do usuário
+var LINE_OFFSET = 0;
+(function calibrate() {
+  try {
+    var fn = new Function('"use strict";\nthrow new Error("__cal__")');
+    fn();
+  } catch (e) {
+    var rawLine = extractRawLine(e.stack);
+    if (rawLine !== null) {
+      LINE_OFFSET = rawLine - 1;
+    }
+  }
+})();
+
+function extractLineNumber(stack) {
+  var rawLine = extractRawLine(stack);
+  if (rawLine === null) return null;
+  var userLine = rawLine - LINE_OFFSET;
+  return userLine > 0 ? userLine : null;
+}
+
+function serializeArg(arg) {
+  try {
+    if (arg === null) return { __type: 'null' };
+    if (arg === undefined) return { __type: 'undefined' };
+    if (typeof arg === 'number') return { __type: 'number', value: arg };
+    if (typeof arg === 'boolean') return { __type: 'boolean', value: arg };
+    if (typeof arg === 'string') return { __type: 'string', value: arg };
+    if (typeof arg === 'function') return { __type: 'function', value: 'ƒ ' + (arg.name || 'anonymous') + '()' };
+    if (typeof arg === 'symbol') return { __type: 'symbol', value: arg.toString() };
+    if (arg instanceof Error) {
+      return { __type: 'error', name: arg.name, message: arg.message, stack: arg.stack };
+    }
+    if (Array.isArray(arg)) {
+      return { __type: 'array', items: arg.map(serializeArg), length: arg.length };
+    }
+    if (typeof arg === 'object') {
+      var entries = {};
+      var keys = Object.keys(arg);
+      for (var k = 0; k < keys.length; k++) {
+        try { entries[keys[k]] = serializeArg(arg[keys[k]]); } catch(e) { entries[keys[k]] = { __type: 'string', value: '[Circular]' }; }
+      }
+      return { __type: 'object', entries: entries, keys: keys };
+    }
+    return { __type: 'string', value: String(arg) };
+  } catch (e) {
+    return { __type: 'string', value: String(arg) };
+  }
+}
+
 function sendLog(type, args, stack) {
+  var callStack = stack || null;
+  if (!callStack) {
+    try { throw new Error(); } catch (e) { callStack = e.stack; }
+  }
+  var lineNumber = extractLineNumber(callStack);
+
   self.postMessage({
     type: 'log',
     data: {
       id: Math.random().toString(36).substr(2, 9),
       timestamp: new Date().toISOString(),
       type: type,
-      args: Array.from(args).map(arg => {
-        try {
-          // Serializar objetos complexos
-          if (typeof arg === 'object' && arg !== null) {
-            if (arg instanceof Error) {
-              return {
-                name: arg.name,
-                message: arg.message,
-                stack: arg.stack
-              };
-            }
-            return JSON.parse(JSON.stringify(arg));
-          }
-          return arg;
-        } catch (e) {
-          return String(arg);
-        }
-      }),
-      stack
+      args: Array.from(args).map(serializeArg),
+      lineNumber: lineNumber,
+      stack: stack || null
     }
   });
 }
@@ -199,18 +249,9 @@ function executeCode(code) {
     // Criar ambiente seguro
     const safeGlobal = createSafeEnvironment();
     
-    // Criar função que executa o código no contexto seguro
     const executeInContext = new Function(
       ...Object.keys(safeGlobal),
-      `
-      "use strict";
-      try {
-        ${code}
-      } catch (error) {
-        console.error(error.message);
-        throw error;
-      }
-      `
+      '"use strict";\n' + code
     );
 
     // Executar código

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProjetoService } from '@/lib/projeto-service'
 import { ReactFileService } from '@/lib/react-file-service'
@@ -23,7 +24,6 @@ import {
   Command
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -231,44 +231,57 @@ export default function DashboardPage() {
   const counts = getProjectCounts()
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <h1 className="text-xl font-bold font-mono">
-                <span className="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-700 text-transparent bg-clip-text">
-                  &lt;
-                </span>
-                lab
-                <span className="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-700 text-transparent bg-clip-text">
-                  code&gt;
-                </span>
-              </h1>
+    <div className="min-h-screen bg-[#0B1120]">
+      {/* Cabeçalho: logo | busca central | ações — limpo, sem bordas fortes */}
+      <header className="bg-[#0B1120]/90 backdrop-blur-md sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center gap-6">
+            <Image
+              src="/labcode.svg"
+              alt="lab code"
+              width={140}
+              height={26}
+              className="h-6 w-auto shrink-0"
+              priority
+            />
+
+            {/* Barra de busca central — frosted glass, borda Purple-Blue glowing */}
+            <div className="flex-1 flex justify-center max-w-xl mx-auto">
+              <div className="relative w-full group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white shrink-0 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar Projetos"
+                  className="w-full h-10 pl-9 pr-4 rounded-xl bg-[#131A2A]/80 border border-slate-700/50 text-white placeholder:text-white/80 text-sm backdrop-blur-sm transition-all duration-200 focus:outline-none focus:border-[#5340FF]/70 focus:ring-2 focus:ring-[#5340FF]/20 focus:shadow-[0_0_20px_rgba(83,64,255,0.15)]"
+                />
+                <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 rounded border border-slate-600/60 bg-slate-800/40 px-1.5 py-0.5 font-mono text-[10px] text-slate-400">
+                  <Command className="w-3 h-3" />K
+                </kbd>
+              </div>
             </div>
 
-            {/* Ações */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 shrink-0">
               <Button
                 onClick={() => setShowNewProjectDialog(true)}
                 size="sm"
-                className="bg-primary hover:bg-primary/90"
+                variant="outline"
+                className="border-white/40 text-white hover:bg-white/10 hover:border-white/60"
                 disabled={!user && authLoading}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Novo Projeto
               </Button>
-
               {authLoading ? (
-                <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+                <div className="w-8 h-8 rounded-full bg-slate-700/50 animate-pulse" />
               ) : user ? (
                 <UserMenu />
               ) : (
                 <Button
                   variant="outline"
                   size="sm"
+                  className="border-slate-500 text-slate-300 hover:bg-slate-800 hover:text-white"
                   onClick={() => router.push('/auth')}
                 >
                   <LogIn className="w-4 h-4 mr-2" />
@@ -280,86 +293,102 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Conteúdo Principal */}
+      {/* Conteúdo: filtros à esquerda + título e grid à direita */}
       <main className="container mx-auto px-4 py-8">
-        {/* Título e Busca */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-3xl font-bold mb-2">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Filtros laterais (esquerda em lg+) — abas minimalistas, ativa com barra Purple-Blue */}
+          <aside className="w-full lg:w-44 shrink-0">
+            <nav className="flex flex-row flex-wrap lg:flex-col gap-1 lg:gap-0.5" aria-label="Filtros por tipo">
+              <button
+                type="button"
+                onClick={() => setFilterType('all')}
+                className={`flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-left transition-colors border-b-2 ${
+                  filterType === 'all'
+                    ? 'text-[#5340FF] bg-[#5340FF]/5 border-b-[#5340FF] shadow-[0_2px_12px_rgba(83,64,255,0.15)]'
+                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                }`}
+              >
+                Todos ({counts.total})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterType(ProjectType.JAVASCRIPT)}
+                className={`flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-left transition-colors border-b-2 ${
+                  filterType === ProjectType.JAVASCRIPT
+                    ? 'text-[#5340FF] bg-[#5340FF]/5 border-b-[#5340FF] shadow-[0_2px_12px_rgba(83,64,255,0.15)]'
+                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                }`}
+              >
+                <Code2 className="w-4 h-4 shrink-0 text-slate-500" />
+                JavaScript ({counts.javascript})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterType(ProjectType.WEB_COMPLETE)}
+                className={`flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-left transition-colors border-b-2 ${
+                  filterType === ProjectType.WEB_COMPLETE
+                    ? 'text-[#5340FF] bg-[#5340FF]/5 border-b-[#5340FF] shadow-[0_2px_12px_rgba(83,64,255,0.15)]'
+                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                }`}
+              >
+                <Globe className="w-4 h-4 shrink-0 text-slate-500" />
+                Web ({counts.web})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterType(ProjectType.REACT)}
+                className={`flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-left transition-colors border-b-2 ${
+                  filterType === ProjectType.REACT
+                    ? 'text-[#5340FF] bg-[#5340FF]/5 border-b-[#5340FF] shadow-[0_2px_12px_rgba(83,64,255,0.15)]'
+                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                }`}
+              >
+                <Layers className="w-4 h-4 shrink-0 text-slate-500" />
+                React ({counts.react})
+              </button>
+            </nav>
+          </aside>
+
+          <div className="flex-1 min-w-0">
+            {/* Título e subtítulo */}
+            <div className="mb-6">
+              <h2 className="text-3xl font-semibold text-white tracking-tight">
                 {user ? 'Meus Projetos' : 'Projetos Públicos'}
               </h2>
-              <p className="text-muted-foreground">
-                {user 
-                  ? `${counts.total} ${counts.total === 1 ? 'projeto' : 'projetos'}` 
-                  : 'Explore projetos compartilhados pela comunidade'
-                }
+              <p className="text-slate-400 text-sm mt-1">
+                {user
+                  ? `${counts.total} ${counts.total === 1 ? 'projeto' : 'projetos'}`
+                  : 'Explore projetos compartilhados pela comunidade'}
               </p>
             </div>
 
-            {/* Campo de Busca */}
-            <div className="relative w-full md:w-80">
-              <Button
-                variant="outline"
-                className="w-full justify-start text-left font-normal"
-                onClick={() => setShowSearchCommand(true)}
-              >
-                <Search className="w-4 h-4 mr-2 text-muted-foreground" />
-                <span className="text-muted-foreground">Buscar projetos...</span>
-                <kbd className="pointer-events-none ml-auto inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                  <Command className="w-3 h-3" />K
-                </kbd>
-              </Button>
-            </div>
-          </div>
+            {/* Grid de Projetos */}
+            <ProjectGrid
+              projects={filteredProjects}
+              loading={loading}
+              onOpenProject={handleOpenProject}
+              onDeleteProject={handleDeleteProject}
+              onDuplicateProject={handleDuplicateProject}
+              onShareProject={handleShareProject}
+            />
 
-          {/* Filtros por Tipo */}
-          <Tabs value={filterType} onValueChange={(value) => setFilterType(value as typeof filterType)}>
-            <TabsList>
-              <TabsTrigger value="all">
-                Todos ({counts.total})
-              </TabsTrigger>
-              <TabsTrigger value={ProjectType.JAVASCRIPT}>
-                <Code2 className="w-4 h-4 mr-2" />
-                JavaScript ({counts.javascript})
-              </TabsTrigger>
-              <TabsTrigger value={ProjectType.WEB_COMPLETE}>
-                <Globe className="w-4 h-4 mr-2" />
-                Web ({counts.web})
-              </TabsTrigger>
-              <TabsTrigger value={ProjectType.REACT}>
-                <Layers className="w-4 h-4 mr-2" />
-                React ({counts.react})
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+            {/* Mensagem quando não há resultados de busca */}
+            {!loading && filteredProjects.length === 0 && projects.length > 0 && (
+              <div className="text-center py-20">
+                <p className="text-slate-400">
+                  Nenhum projeto encontrado com &quot;{searchTerm}&quot;
+                </p>
+                <Button
+                  variant="link"
+                  onClick={() => setSearchTerm('')}
+                  className="mt-2 text-[#5340FF] hover:text-[#6366f1]"
+                >
+                  Limpar busca
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* Grid de Projetos */}
-        <ProjectGrid
-          projects={filteredProjects}
-          loading={loading}
-          onOpenProject={handleOpenProject}
-          onDeleteProject={handleDeleteProject}
-          onDuplicateProject={handleDuplicateProject}
-          onShareProject={handleShareProject}
-        />
-
-        {/* Mensagem quando não há resultados de busca */}
-        {!loading && filteredProjects.length === 0 && projects.length > 0 && (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground">
-              Nenhum projeto encontrado com &quot;{searchTerm}&quot;
-            </p>
-            <Button
-              variant="link"
-              onClick={() => setSearchTerm('')}
-              className="mt-2"
-            >
-              Limpar busca
-            </Button>
-          </div>
-        )}
       </main>
 
       {/* Dialogs */}

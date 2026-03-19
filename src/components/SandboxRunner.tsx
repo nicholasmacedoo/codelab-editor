@@ -2,11 +2,24 @@
 
 import { useRef, useCallback, useEffect } from 'react'
 
+export interface SerializedValue {
+  __type: 'null' | 'undefined' | 'number' | 'boolean' | 'string' | 'function' | 'symbol' | 'error' | 'array' | 'object'
+  value?: unknown
+  name?: string
+  message?: string
+  stack?: string
+  items?: SerializedValue[]
+  length?: number
+  entries?: Record<string, SerializedValue>
+  keys?: string[]
+}
+
 export interface LogEntry {
   id: string
   timestamp: Date
   type: 'log' | 'info' | 'warn' | 'error'
-  args: unknown[]
+  args: SerializedValue[]
+  lineNumber?: number | null
   stack?: string
 }
 

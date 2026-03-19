@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,7 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Mail, Lock, User, ArrowRight } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
 
 export default function PaginaAutenticacao() {
   const router = useRouter()
@@ -49,7 +51,6 @@ export default function PaginaAutenticacao() {
         return
       }
       
-      // Aguardar um pouco para garantir que o estado seja atualizado
       setTimeout(() => {
         router.push('/')
       }, 100)
@@ -101,80 +102,101 @@ export default function PaginaAutenticacao() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Carregando...</p>
+      <div className="min-h-screen bg-[#0B1120] flex items-center justify-center p-6">
+        <div className="w-full max-w-[400px] flex flex-col items-center gap-10">
+          <header className="text-center flex flex-col items-center gap-5 w-full">
+            <Skeleton className="h-9 w-40" />
+            <Skeleton className="h-4 w-72 max-w-full" />
+          </header>
+          <Skeleton className="w-full h-[340px] rounded-2xl" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-             <h1 className="text-4xl text-white font-bold font-mono">
-                <span className='bg-gradient-to-r from-orange-500 via-pink-500 to-purple-700 text-transparent bg-clip-text'>&lt;</span>lab<span className='bg-gradient-to-r from-orange-500 via-pink-500 to-purple-700 text-transparent bg-clip-text'>code&gt;</span></h1>
-          <p className="text-gray-400">
+    <div className="min-h-screen bg-[#0B1120] flex items-center justify-center p-6 font-sans">
+      <div className="w-full max-w-[400px] flex flex-col items-center gap-10">
+        {/* Cabeçalho: logo + texto de apoio */}
+        <header className="text-center flex flex-col items-center gap-5">
+          <Image
+            src="/labcode.svg"
+            alt="lab code"
+            width={200}
+            height={36}
+            className="h-9 w-auto"
+            priority
+          />
+          <p className="text-slate-400 text-[15px] leading-relaxed max-w-[320px]">
             Crie, edite e compartilhe código JavaScript online
           </p>
-        </div>
+        </header>
 
-        {/* Formulários */}
-        <Card className="shadow-xl border-gray-700 bg-gray-800">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-center text-xl text-white">Bem-vindo</CardTitle>
-            <CardDescription className="text-center text-gray-400">
+        {/* Caixa de login: frosted glass */}
+        <Card className="w-full shadow-2xl border-slate-700/40 rounded-2xl overflow-hidden bg-[#131A2A]/70 backdrop-blur-xl">
+          <CardHeader className="pb-5 pt-9 px-8">
+            <CardTitle className="text-center text-2xl font-semibold text-white tracking-tight">
+              Bem-vindo
+            </CardTitle>
+            <CardDescription className="text-center text-slate-400 mt-2 text-sm">
               Entre na sua conta ou crie uma nova para começar
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-8 pb-9">
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-700 border-gray-600">
-                <TabsTrigger value="login" className="data-[state=active]:bg-gray-600 data-[state=active]:text-white text-gray-300">Entrar</TabsTrigger>
-                <TabsTrigger value="cadastro" className="data-[state=active]:bg-gray-600 data-[state=active]:text-white text-gray-300">Cadastrar</TabsTrigger>
+              <TabsList className="w-full flex border-b border-slate-700/60 bg-transparent p-0 mb-7 h-auto rounded-none">
+                <TabsTrigger
+                  value="login"
+                  className="flex-1 rounded-none bg-transparent py-3 text-sm font-medium text-slate-500 hover:text-slate-300 data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-[#5340FF] data-[state=active]:shadow-[0_2px_12px_rgba(83,64,255,0.35)] transition-colors"
+                >
+                  Entrar
+                </TabsTrigger>
+                <TabsTrigger
+                  value="cadastro"
+                  className="flex-1 rounded-none bg-transparent py-3 text-sm font-medium text-slate-500 hover:text-slate-300 data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-[#5340FF] data-[state=active]:shadow-[0_2px_12px_rgba(83,64,255,0.35)] transition-colors"
+                >
+                  Cadastrar
+                </TabsTrigger>
               </TabsList>
 
               {/* Aba de Login */}
-              <TabsContent value="login" className="space-y-4">
-                <form onSubmit={handleLogin} className="space-y-4">
+              <TabsContent value="login" className="space-y-5 mt-0">
+                <form onSubmit={handleLogin} className="space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="email-login" className="text-gray-300">Email</Label>
+                    <Label htmlFor="email-login" className="text-sm font-medium text-slate-300">Email</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                      <Mail className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
                       <Input
                         id="email-login"
                         type="email"
-                        placeholder="seu@email.com"
+                        placeholder="nicholas..."
                         value={emailLogin}
                         onChange={(e) => setEmailLogin(e.target.value)}
-                        className="pl-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500"
+                        className="pl-10 h-11 rounded-lg bg-[#1c2836] border-slate-600/50 text-white placeholder:text-slate-400 focus:border-[#5340FF]/60 focus:ring-1 focus:ring-[#5340FF]/40 transition-all"
                         required
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="senha-login" className="text-gray-300">Senha</Label>
+                    <Label htmlFor="senha-login" className="text-sm font-medium text-slate-300">Senha</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                      <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
                       <Input
                         id="senha-login"
                         type="password"
-                        placeholder="Sua senha"
+                        placeholder="••••••••"
                         value={senhaLogin}
                         onChange={(e) => setSenhaLogin(e.target.value)}
-                        className="pl-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500"
+                        className="pl-10 h-11 rounded-lg bg-[#1c2836] border-slate-600/50 text-white placeholder:text-slate-400 focus:border-[#5340FF]/60 focus:ring-1 focus:ring-[#5340FF]/40 transition-all"
                         required
                       />
                     </div>
                   </div>
 
                   {erroLogin && (
-                    <Alert className="border-red-500 bg-red-900/20">
-                      <AlertDescription className="text-red-400">
+                    <Alert className="border-red-500/50 bg-red-500/10 py-3 rounded-lg">
+                      <AlertDescription className="text-red-400 text-sm">
                         {erroLogin}
                       </AlertDescription>
                     </Alert>
@@ -182,86 +204,85 @@ export default function PaginaAutenticacao() {
 
                   <Button
                     type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    className="w-full h-11 rounded-lg bg-[#0F766E] hover:bg-[#0D5E56] text-white font-medium transition-colors mt-2"
                     disabled={carregandoLogin}
                   >
                     {carregandoLogin ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="flex items-center justify-center">
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         Entrando...
                       </div>
                     ) : (
-                      <div className="flex items-center">
-                        Entrar
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </div>
+                      <span className="flex items-center justify-center">
+                        Entrar <ArrowRight className="ml-2 h-4 w-4" />
+                      </span>
                     )}
                   </Button>
                 </form>
               </TabsContent>
 
               {/* Aba de Cadastro */}
-              <TabsContent value="cadastro" className="space-y-4">
-                <form onSubmit={handleCadastro} className="space-y-4">
+              <TabsContent value="cadastro" className="space-y-5 mt-0">
+                <form onSubmit={handleCadastro} className="space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="email-cadastro" className="text-gray-300">Email</Label>
+                    <Label htmlFor="email-cadastro" className="text-sm font-medium text-slate-300">Email</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                      <Mail className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
                       <Input
                         id="email-cadastro"
                         type="email"
-                        placeholder="seu@email.com"
+                        placeholder="nicholas..."
                         value={emailCadastro}
                         onChange={(e) => setEmailCadastro(e.target.value)}
-                        className="pl-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500"
+                        className="pl-10 h-11 rounded-lg bg-[#1c2836] border-slate-600/50 text-white placeholder:text-slate-400 focus:border-[#5340FF]/60 focus:ring-1 focus:ring-[#5340FF]/40 transition-all"
                         required
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="senha-cadastro" className="text-gray-300">Senha</Label>
+                    <Label htmlFor="senha-cadastro" className="text-sm font-medium text-slate-300">Senha</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                      <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
                       <Input
                         id="senha-cadastro"
                         type="password"
                         placeholder="Mínimo 6 caracteres"
                         value={senhaCadastro}
                         onChange={(e) => setSenhaCadastro(e.target.value)}
-                        className="pl-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500"
+                        className="pl-10 h-11 rounded-lg bg-[#1c2836] border-slate-600/50 text-white placeholder:text-slate-400 focus:border-[#5340FF]/60 focus:ring-1 focus:ring-[#5340FF]/40 transition-all"
                         required
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirmar-senha" className="text-gray-300">Confirmar Senha</Label>
+                    <Label htmlFor="confirmar-senha" className="text-sm font-medium text-slate-300">Confirmar Senha</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                      <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
                       <Input
                         id="confirmar-senha"
                         type="password"
                         placeholder="Confirme sua senha"
                         value={confirmacaoSenha}
                         onChange={(e) => setConfirmacaoSenha(e.target.value)}
-                        className="pl-10 bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 focus:border-blue-500"
+                        className="pl-10 h-11 rounded-lg bg-[#1c2836] border-slate-600/50 text-white placeholder:text-slate-400 focus:border-[#5340FF]/60 focus:ring-1 focus:ring-[#5340FF]/40 transition-all"
                         required
                       />
                     </div>
                   </div>
 
                   {erroCadastro && (
-                    <Alert className="border-red-500 bg-red-900/20">
-                      <AlertDescription className="text-red-400">
+                    <Alert className="border-red-500/50 bg-red-500/10 py-3 rounded-lg">
+                      <AlertDescription className="text-red-400 text-sm">
                         {erroCadastro}
                       </AlertDescription>
                     </Alert>
                   )}
 
                   {sucessoCadastro && (
-                    <Alert className="border-green-500 bg-green-900/20">
-                      <AlertDescription className="text-green-400">
+                    <Alert className="border-emerald-500/50 bg-emerald-500/10 py-3 rounded-lg">
+                      <AlertDescription className="text-emerald-400 text-sm">
                         {sucessoCadastro}
                       </AlertDescription>
                     </Alert>
@@ -269,19 +290,18 @@ export default function PaginaAutenticacao() {
 
                   <Button
                     type="submit"
-                    className="w-full bg-green-600 hover:bg-green-700"
+                    className="w-full h-11 rounded-lg bg-[#0F766E] hover:bg-[#0D5E56] text-white font-medium transition-colors mt-2"
                     disabled={carregandoCadastro}
                   >
                     {carregandoCadastro ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="flex items-center justify-center">
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         Criando conta...
                       </div>
                     ) : (
-                      <div className="flex items-center">
-                        <User className="mr-2 h-4 w-4" />
-                        Criar Conta
-                      </div>
+                      <span className="flex items-center justify-center">
+                        Criar Conta <ArrowRight className="ml-2 h-4 w-4" />
+                      </span>
                     )}
                   </Button>
                 </form>
@@ -290,19 +310,19 @@ export default function PaginaAutenticacao() {
           </CardContent>
         </Card>
 
-        {/* Footer */}
-        <div className="text-center mt-8 text-sm text-gray-400">
+        {/* Rodapé legal: cinza-azulado, links purple-blue, sem | ou ponto */}
+        <footer className="text-center text-sm text-slate-500">
           <p>
             Ao continuar, você concorda com nossos{' '}
-            <a href="#" className="text-blue-400 hover:underline">
+            <a href="#" className="text-[#5340FF] hover:text-[#6366f1] transition-colors">
               Termos de Uso
             </a>{' '}
             e{' '}
-            <a href="#" className="text-blue-400 hover:underline">
+            <a href="#" className="text-[#5340FF] hover:text-[#6366f1] transition-colors">
               Política de Privacidade
             </a>
           </p>
-        </div>
+        </footer>
       </div>
     </div>
   )

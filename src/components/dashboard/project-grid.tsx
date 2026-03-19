@@ -2,7 +2,7 @@
 
 import { Project } from '@/types/project'
 import { ProjectCard } from './project-card'
-import { Loader2 } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface ProjectGridProps {
   projects: Project[]
@@ -11,6 +11,28 @@ interface ProjectGridProps {
   onDeleteProject: (project: Project) => void
   onDuplicateProject: (project: Project) => void
   onShareProject: (project: Project) => void
+}
+
+function ProjectCardSkeleton() {
+  return (
+    <div className="rounded-xl border-2 border-slate-700/50 bg-[#131A2A]/60 overflow-hidden flex flex-col">
+      <div className="p-5 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+          <div className="flex-1 min-w-0 space-y-2">
+            <Skeleton className="h-4 w-full max-w-[140px]" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        </div>
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-4/5" />
+        <div className="flex justify-between items-center mt-2">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-8 w-28 rounded-lg" />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function ProjectGrid({ 
@@ -23,11 +45,10 @@ export function ProjectGrid({
 }: ProjectGridProps) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Carregando projetos...</p>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <ProjectCardSkeleton key={i} />
+        ))}
       </div>
     )
   }
@@ -36,11 +57,11 @@ export function ProjectGrid({
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center max-w-md">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-700/40 flex items-center justify-center">
             <span className="text-4xl">📁</span>
           </div>
-          <h3 className="text-lg font-semibold mb-2">Nenhum projeto encontrado</h3>
-          <p className="text-sm text-muted-foreground">
+          <h3 className="text-lg font-semibold text-white mb-2">Nenhum projeto encontrado</h3>
+          <p className="text-sm text-slate-400">
             Crie seu primeiro projeto para começar a programar!
           </p>
         </div>

@@ -11,7 +11,6 @@ import { WebCompleteEditor } from '@/components/editor/web-complete-editor'
 import { ReactEditor } from '@/components/editor/react-editor'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { UserMenu } from '@/components/UserMenu'
 import { 
   Save, 
@@ -26,6 +25,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ModalPermissoes, ConfiguracaoCompartilhamento } from '@/components/ModalPermissoes'
+import { Skeleton } from '@/components/ui/skeleton'
+import Image from 'next/image'
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
@@ -306,11 +307,35 @@ export default function EditorPage() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Carregando projeto...</p>
+      <div className="h-screen flex flex-col bg-[#0B1120]">
+        <header className="flex-shrink-0 border-b border-slate-800/60 bg-[#0B1120]/95">
+          <div className="px-5 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              <Skeleton className="h-9 w-9 rounded-lg" />
+              <Skeleton className="h-7 w-24 rounded-md" />
+              <Skeleton className="h-8 flex-1 max-w-xs rounded-md" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-20 rounded-lg" />
+              <Skeleton className="h-9 w-24 rounded-lg" />
+              <Skeleton className="h-9 w-9 rounded-full" />
+            </div>
+          </div>
+        </header>
+        <div className="flex-1 flex min-h-0">
+          <div className="flex-1 flex flex-col border-r border-slate-800/60">
+            <Skeleton className="h-12 w-full rounded-none" />
+            <Skeleton className="flex-1 w-full rounded-none" />
+          </div>
+          <Skeleton className="w-[420px] flex-shrink-0 rounded-none" />
         </div>
+        <footer className="flex-shrink-0 border-t border-slate-800/60 px-5 py-2">
+          <div className="flex items-center justify-center gap-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-3 w-3 rounded-full" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+        </footer>
       </div>
     )
   }
@@ -323,91 +348,68 @@ export default function EditorPage() {
   const isWebComplete = project.type === ProjectType.WEB_COMPLETE
 
   return (
-    <div className="h-screen flex flex-col bg-gray-900">
-      {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700 shadow-sm">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Voltar e Nome do Projeto */}
-            <div className="flex items-center space-x-4 flex-1 min-w-0">
+    <div className="h-screen flex flex-col bg-[#0B1120] min-w-0" data-editor-zoom-friendly>
+      {/* Barra de ferramentas superior */}
+      <header className="flex-shrink-0 border-b border-slate-800/60 bg-[#0B1120]/95 backdrop-blur-sm">
+        <div className="px-5 py-3">
+          <div className="flex items-center justify-between gap-4">
+            {/* Voltar (só ícone) + tag + título */}
+            <div className="flex items-center gap-4 flex-1 min-w-0">
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => router.push('/dashboard')}
-                className="text-gray-300 hover:text-white hover:bg-gray-700"
+                className="h-9 w-9 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-lg"
+                aria-label="Voltar"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Voltar
+                <ArrowLeft className="w-4 h-4" />
               </Button>
 
-              <div className="h-6 w-px bg-gray-600" />
-
-              <Badge variant="secondary" className={
-                isJavaScript 
-                  ? 'bg-yellow-500/10 text-yellow-600' 
-                  : isWebComplete
-                  ? 'bg-blue-500/10 text-blue-600'
-                  : 'bg-cyan-500/10 text-cyan-600'
-              }>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-700/40 text-slate-300 border border-slate-600/50">
                 {isJavaScript ? (
-                  <>
-                    <Code2 className="w-3 h-3 mr-1" />
-                    JavaScript
-                  </>
-                ) : isWebComplete ? (
-                  <>
-                    <Globe className="w-3 h-3 mr-1" />
-                    Web Completo
-                  </>
+                  <span className="font-mono text-[#5340FF]/90">&lt;&gt;</span>
                 ) : (
-                  <>
-                    <Layers className="w-3 h-3 mr-1" />
-                    React
-                  </>
+                  isWebComplete ? <Globe className="w-3.5 h-3.5 text-slate-500" /> : <Layers className="w-3.5 h-3.5 text-slate-500" />
                 )}
-              </Badge>
+                {isJavaScript ? 'JavaScript' : isWebComplete ? 'Web Completo' : 'React'}
+              </span>
 
               <Input
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
-                className="max-w-md text-base font-medium shadow-none focus-visible:ring-0 bg-transparent border border-gray-700 hover:bg-gray-700 focus:bg-gray-700 rounded-md px-2 py-1 transition-colors text-gray-200"
+                className="max-w-md text-base font-medium bg-transparent border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-1.5 text-white placeholder:text-slate-500 rounded-lg hover:bg-slate-800/40 focus:bg-slate-800/40 transition-colors"
                 placeholder="Nome do projeto"
               />
 
-              {/* Status de salvamento */}
               {saveStatus !== 'idle' && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
                   {getSaveStatusIcon()}
                   <span>{getSaveStatusText()}</span>
                 </div>
               )}
             </div>
 
-            {/* Ações */}
-            <div className="flex items-center space-x-3">
+            {/* Salvar, Compartilhar, Perfil */}
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => saveProject(true)}
-                className="text-gray-300 hover:text-white hover:bg-gray-700"
+                className="text-slate-300 hover:text-white hover:bg-slate-800/60 h-9 px-3"
                 disabled={saveStatus === 'saving'}
               >
                 <Save className="w-4 h-4 mr-2" />
                 Salvar
               </Button>
-
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowShareModal(true)}
-                className="text-gray-300 hover:text-white hover:bg-gray-700"
+                className="text-slate-300 hover:text-white hover:bg-slate-800/60 h-9 px-3"
               >
                 <Share2 className="w-4 h-4 mr-2" />
                 Compartilhar
               </Button>
-
-              <div className="h-6 w-px bg-gray-600" />
-
               {user && <UserMenu />}
             </div>
           </div>
@@ -415,7 +417,7 @@ export default function EditorPage() {
       </header>
 
       {/* Editor Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {isJavaScript ? (
           <JavaScriptEditor
             code={jsCode}
@@ -445,6 +447,19 @@ export default function EditorPage() {
           />
         )}
       </div>
+
+      {/* Rodapé institucional */}
+      <footer className="flex-shrink-0 border-t border-slate-800/60 px-5 py-2 bg-[#0B1120]/80 flex items-center justify-center gap-2 text-xs text-slate-500">
+        <Image
+          src="/labcode.svg"
+          alt="lab code"
+          width={80}
+          height={15}
+          className="h-4 w-auto opacity-90"
+        />
+        <span className="text-slate-600">·</span>
+        <span>Uma plataforma de educação LAB365</span>
+      </footer>
 
       {/* Modal de Compartilhamento */}
       <ModalPermissoes
