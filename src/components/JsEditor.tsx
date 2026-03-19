@@ -3,8 +3,7 @@
 import { Editor } from '@monaco-editor/react'
 import { useCallback, useRef } from 'react'
 import type { editor } from 'monaco-editor'
-
-const LABCODE_THEME = 'labcode-dark'
+import { LABCODE_THEME, defineLabCodeTheme } from '@/lib/monaco-labcode-theme'
 
 interface JsEditorProps {
   value: string
@@ -14,60 +13,6 @@ interface JsEditorProps {
   onClearConsole?: () => void
   readOnly?: boolean
   className?: string
-}
-
-function defineLabCodeTheme(monaco: typeof import('monaco-editor')) {
-  monaco.editor.defineTheme(LABCODE_THEME, {
-    base: 'vs-dark',
-    inherit: true,
-    rules: [
-      // Paleta base — alto contraste para transmissão
-      { token: 'keyword', foreground: '7dd3fc', fontStyle: '' },
-      { token: 'string', foreground: 'fde047' },
-      { token: 'number', foreground: 'e879f9' },
-      { token: 'comment', foreground: '64748b', fontStyle: 'italic' },
-      { token: 'regexp', foreground: 'c4b5fd' },
-      { token: 'operator', foreground: '94a3b8' },
-      { token: 'delimiter', foreground: 'a5b4fc' },
-      { token: 'type', foreground: '7dd3fc' },
-      { token: 'identifier', foreground: 'f8fafc' },
-      // Chaves e parênteses
-      { token: 'delimiter.bracket', foreground: 'c4b5fd' },
-      { token: 'delimiter.square', foreground: 'c4b5fd' },
-      { token: 'delimiter.parenthesis', foreground: 'c4b5fd' },
-      { token: 'delimiter.curly', foreground: 'c4b5fd' },
-      // Funções, métodos e chamadas — máximo contraste (verde limpo sobre fundo escuro)
-      { token: 'entity.name.function', foreground: '4ade80', fontStyle: 'bold' },
-      { token: 'entity.name.method', foreground: '4ade80', fontStyle: 'bold' },
-      { token: 'support.function', foreground: '4ade80', fontStyle: 'bold' },
-      { token: 'support.function.console', foreground: '4ade80', fontStyle: 'bold' },
-      { token: 'meta.function-call', foreground: '4ade80', fontStyle: 'bold' },
-      { token: 'variable.function', foreground: '4ade80', fontStyle: 'bold' },
-      { token: 'support.class', foreground: '6ee7b7' },
-      { token: 'entity.name.class', foreground: '6ee7b7' },
-      // Objetos e propriedades
-      { token: 'variable.parameter', foreground: 'f8fafc' },
-      { token: 'entity.name.type', foreground: '67e8f9' },
-      { token: 'support.type', foreground: '67e8f9' },
-      { token: 'variable.other.readwrite', foreground: 'f8fafc' },
-      { token: 'variable.other.property', foreground: 'bae6fd' },
-      { token: 'meta.method-call', foreground: '4ade80', fontStyle: 'bold' },
-      // Constantes e literais
-      { token: 'constant', foreground: 'e879f9' },
-      { token: 'constant.language', foreground: 'e879f9' },
-      { token: 'constant.character.escape', foreground: '94a3b8' },
-    ],
-    colors: {
-      'editor.background': '#0B1120',
-      'editor.foreground': '#f8fafc',
-      'editorLineNumber.foreground': '#64748b',
-      'editorLineNumber.activeForeground': '#cbd5e1',
-      'editor.selectionBackground': '#33415580',
-      'editorCursor.foreground': '#f8fafc',
-      'editorBracketMatch.background': '#1e293b',
-      'editorBracketMatch.border': '#94a3b8',
-    },
-  })
 }
 
 export function JsEditor({

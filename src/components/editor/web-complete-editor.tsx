@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import Editor from '@monaco-editor/react'
+import { LABCODE_THEME, defineLabCodeTheme } from '@/lib/monaco-labcode-theme'
 import { WebPreview } from './web-preview'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -107,14 +108,14 @@ export function WebCompleteEditor({
   }, [onSave])
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-[#0B1120]">
       {/* Editor */}
       <div 
         className="flex flex-col min-w-0 transition-all duration-300"
         style={{ width: showPreview ? '50%' : '100%' }}
       >
         {/* Toolbar com Tabs */}
-        <div className="border-b bg-muted/30 backdrop-blur-sm">
+        <div className="border-b border-slate-800/60 px-4 py-2.5 bg-[#131A2A]/50 backdrop-blur-sm">
           <div className="flex items-center justify-between px-2 py-2">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as EditorTab)}>
               <TabsList className="h-9">
@@ -160,8 +161,9 @@ export function WebCompleteEditor({
             language={getEditorLanguage(activeTab)}
             value={getCurrentCode()}
             onChange={handleCodeChange}
+            beforeMount={defineLabCodeTheme}
             onMount={handleEditorDidMount}
-            theme="vs-dark"
+            theme={LABCODE_THEME}
             options={{
               minimap: { enabled: true },
               fontSize: 14,
@@ -186,7 +188,7 @@ export function WebCompleteEditor({
       {/* Preview */}
       {showPreview && (
         <div 
-          className="border-l flex-shrink-0 transition-all duration-300"
+          className="border-l border-slate-800/60 flex-shrink-0 transition-all duration-300"
           style={{ width: '50%' }}
         >
           <WebPreview

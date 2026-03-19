@@ -6,6 +6,7 @@ import { FileExplorer } from './file-explorer'
 import { BundleResult, bundleReactApp } from '@/lib/react-bundler'
 import Editor from '@monaco-editor/react'
 import { Button } from '@/components/ui/button'
+import { LABCODE_THEME, defineLabCodeTheme } from '@/lib/monaco-labcode-theme'
 import { RefreshCw, Maximize2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -82,40 +83,6 @@ export function ReactEditor({
     return () => clearTimeout(timeout)
   }, [files, generatePreview])
 
-  // Atualizar conteúdo no iframe
-  useEffect(() => {
-    if (previewHtml && previewRef.current) {
-      const iframe = previewRef.current
-      
-      try {
-        // Aguardar iframe carregar antes de acessar document
-        if (!iframe.contentDocument && iframe.contentWindow) {
-          // Tentar acessar após um pequeno delay
-          setTimeout(() => {
-            try {
-              const doc = iframe.contentDocument || iframe.contentWindow?.document
-              if (doc) {
-                doc.open()
-                doc.write(previewHtml)
-                doc.close()
-              }
-            } catch (error) {
-              console.warn('Erro ao atualizar iframe (tentativa 2):', error)
-            }
-          }, 50)
-        } else {
-          const doc = iframe.contentDocument || iframe.contentWindow?.document
-          if (doc) {
-            doc.open()
-            doc.write(previewHtml)
-            doc.close()
-          }
-        }
-      } catch (error) {
-        console.warn('Erro ao atualizar iframe:', error)
-      }
-    }
-  }, [previewHtml])
 
   // Salvar alterações
   const handleSave = () => {
@@ -146,8 +113,8 @@ export function ReactEditor({
 
   if (isFullscreen) {
     return (
-      <div className="h-screen w-screen flex flex-col bg-gray-900">
-        <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+      <div className="h-screen w-screen flex flex-col bg-[#0B1120]">
+        <div className="flex items-center justify-between px-4 py-2 bg-[#131A2A]/50 border-b border-slate-800/60">
           <h2 className="text-sm font-semibold text-white">Preview</h2>
           <Button
             variant="ghost"
@@ -159,8 +126,9 @@ export function ReactEditor({
         </div>
         <iframe
           ref={previewRef}
-          className="flex-1 w-full border-0 bg-white"
-          title="Preview"
+          srcDoc={previewHtml || undefined}
+          className="flex-1 w-full border-0 bg-white min-h-[200px]"
+          title="Preview React"
           sandbox="allow-scripts allow-same-origin"
         />
       </div>
@@ -168,7 +136,7 @@ export function ReactEditor({
   }
 
   return (
-    <div className="h-full flex bg-gray-900">
+    <div className="h-full flex bg-[#0B1120]">
       {/* File Explorer - 20% */}
       <div className="w-1/5 min-w-[200px]">
         <FileExplorer
@@ -183,11 +151,11 @@ export function ReactEditor({
       </div>
 
       {/* Editor - 40% */}
-      <div className="w-2/5 border-l border-gray-700 flex flex-col">
+      <div className="w-2/5 border-l border-slate-800/60 flex flex-col">
         {selectedFile ? (
           <>
-            <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
-              <span className="text-sm font-medium text-gray-300">
+            <div className="flex items-center justify-between px-4 py-2.5 bg-[#131A2A]/50 border-b border-slate-800/60 backdrop-blur-sm">
+              <span className="text-sm font-medium text-slate-300">
                 {selectedFile.path}
               </span>
               <div className="flex items-center gap-2">
@@ -204,7 +172,7 @@ export function ReactEditor({
                   variant="ghost"
                   size="sm"
                   onClick={handleSave}
-                  className="text-gray-300 hover:text-white"
+                  className="text-slate-300 hover:text-white"
                 >
                   Salvar
                 </Button>
@@ -217,12 +185,12 @@ export function ReactEditor({
                 value={currentContent}
                 onChange={(value) => {
                   setCurrentContent(value || '')
-                  // Auto-save com debounce
                   if (selectedFile) {
                     onFileUpdate(selectedFile.id, value || '')
                   }
                 }}
-                theme="vs-dark"
+                theme={LABCODE_THEME}
+                beforeMount={defineLabCodeTheme}
                 options={{
                   minimap: { enabled: false },
                   fontSize: 14,
@@ -234,16 +202,16 @@ export function ReactEditor({
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <p className="text-gray-400 mb-2">Selecione um arquivo para editar</p>
-              <p className="text-sm text-gray-500">Use o explorador ao lado para navegar</p>
+              <p className="text-slate-400 mb-2">Selecione um arquivo para editar</p>
+              <p className="text-sm text-slate-500">Use o explorador ao lado para navegar</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Preview - 40% */}
-      <div className="w-2/5 border-l border-gray-700 flex flex-col">
-        <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+      <div className="w-2/5 border-l border-slate-800/60 flex flex-col">
+        <div className="flex items-center justify-between px-4 py-2 bg-[#131A2A]/50 border-b border-slate-800/60">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-white">Preview</span>
             {isBundling && (
@@ -273,8 +241,9 @@ export function ReactEditor({
 
         <iframe
           ref={previewRef}
-          className="flex-1 w-full border-0 bg-white"
-          title="Preview"
+          srcDoc={previewHtml || undefined}
+          className="flex-1 w-full border-0 bg-white min-h-[200px]"
+          title="Preview React"
           sandbox="allow-scripts allow-same-origin"
         />
       </div>

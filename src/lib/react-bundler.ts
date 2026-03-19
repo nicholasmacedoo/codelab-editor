@@ -124,7 +124,19 @@ const resolveImportPath = (currentPath: string, importPath: string): string => {
 }
 
 /**
- * Resolve imports e cria bundle único
+ * Remove todas as linhas de import/export para o bundle rodar em script tag (globals React/ReactDOM)
+ */
+const stripModuleSyntax = (code: string): string => {
+  return code
+    .replace(/export\s+default\s+\w+\s*;?\s*$/gm, '')
+    .replace(/export\s*\{\s*[^}]+\s*\}\s*;?\s*$/gm, '')
+    .replace(/import\s+[\w{},\s*]+\s+from\s+['"][^'"]+['"]\s*;?\s*/g, '')
+    .replace(/import\s+['"][^'"]+['"]\s*;?\s*/g, '')
+    .trim()
+}
+
+/**
+ * Resolve imports e cria bundle único (sem import/export; React/ReactDOM via globals)
  */
 const resolveImports = (files: ReactFiles, entryPoint: string): string => {
   let bundle = ''
@@ -142,25 +154,28 @@ const resolveImports = (files: ReactFiles, entryPoint: string): string => {
     const importRegex = /import\s+([^'"]+?)\s+from\s+['"](.+?)['"]/g
     const imports = [...content.matchAll(importRegex)]
 
-    imports.forEach(([_fullMatch, , importPath]) => {
+    imports.forEach(([fullMatch, , importPath]) => {
       const resolvedPath = resolveImportPath(path, importPath)
 
       if (files[resolvedPath]) {
-        // Arquivo local encontrado - adicionar recursivamente ANTES deste arquivo
         addFile(resolvedPath)
-      } else {
-        // Import externo (React, etc) - manter o import, React será carregado via CDN
-        return
       }
-
-      // Remover statement de import para arquivos locais (já foi resolvido)
-      content = content.replace(_fullMatch, '')
+      // Remover este import (local ou externo - React/ReactDOM virão de window)
+      content = content.replace(fullMatch, '')
     })
+    // Remover import de CSS (ex: import './styles.css')
+    content = content.replace(/import\s+['"][^'"]+\.css['"]\s*;?\s*/g, '')
 
-    // Adicionar arquivo ao bundle
+    content = stripModuleSyntax(content)
     bundle += `\n// File: ${path}\n${content}\n`
   }
 
+  if (!files[entryPoint]) {
+    const fallback = Object.keys(files).find((p) => p.endsWith('index.jsx') || p === 'index.jsx')
+    if (fallback) {
+      entryPoint = fallback
+    }
+  }
   addFile(entryPoint)
   return bundle
 }
@@ -194,53 +209,71 @@ export const bundleReactApp = async (
     console.log('🔍 Arquivos para bundle:', Object.keys(filesMap))
     console.log('🎯 Entry point:', entryPoint)
 
-    // PRIMEIRO: Transpilar cada arquivo individualmente
+    // PRIMEIRO: Transpilar cada arquivo individualmente (nunca injetar JSX bruto)
     const transpiledFiles: ReactFiles = {}
-    Object.entries(filesMap).forEach(([path, content]) => {
+    for (const [path, content] of Object.entries(filesMap)) {
       if (path.endsWith('.jsx') || path.endsWith('.js')) {
         try {
           transpiledFiles[path] = transpileFile(content, path)
           console.log(`✅ Transpilado: ${path}`)
         } catch (error) {
           console.error(`❌ Erro ao transpilar ${path}:`, error)
-          transpiledFiles[path] = content
+          throw error
         }
       } else {
         transpiledFiles[path] = content
       }
-    })
+    }
 
     // SEGUNDO: Resolver imports no código já transpilado
-    const bundledCode = resolveImports(transpiledFiles, entryPoint)
+    let bundledCode = resolveImports(transpiledFiles, entryPoint)
     console.log('📦 Bundle criado, tamanho:', bundledCode.length)
 
-    // Pegar CSS
-    const cssFile = filesMap['src/styles.css'] || ''
+    // Evitar que </script> no código feche o tag e quebre o HTML (parser interpreta resto como HTML)
+    bundledCode = bundledCode.replace(/<\/script/gi, '<\\/script')
 
-    // Gerar HTML final com React CDN
-    const fullHtml = `
-<!DOCTYPE html>
+    // Pegar CSS (vários caminhos possíveis)
+    const cssFile =
+      filesMap['src/styles.css'] ||
+      filesMap['src/style.css'] ||
+      Object.entries(filesMap).filter(([p]) => p.endsWith('.css')).map(([, c]) => c).join('\n') ||
+      ''
+
+    const globals = 'var React = window.React; var ReactDOM = window.ReactDOM;'
+
+    // Gerar HTML final com React CDN; script inline usa globals (sem import/export)
+    const fullHtml = `<!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <style>${cssFile}</style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script>
-      console.log('🚀 Iniciando aplicação React...');
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"><\\/script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"><\\/script>
+  <style>${cssFile}</style>
+</head>
+<body>
+  <div id="root"><p style="padding:20px;color:#64748b;font-family:sans-serif;">Carregando...</p></div>
+  <script>
+    (function() {
+      var root = document.getElementById('root');
       try {
+        if (typeof window.React === 'undefined' || typeof window.ReactDOM === 'undefined') {
+          root.innerHTML = '<div style="padding:20px;color:red;font-family:sans-serif;"><h2>React n\u00e3o carregou</h2><p>Verifique a aba Network: react.development.js e react-dom.development.js devem retornar 200.</p></div>';
+          return;
+        }
+        ${globals}
         ${bundledCode}
-        console.log('✅ Aplicação React carregada com sucesso');
-      } catch (error) {
-        console.error('❌ Erro ao executar aplicação React:', error);
-        document.getElementById('root').innerHTML = '<div style="padding: 20px; color: red;"><h2>Erro ao carregar aplicação</h2><pre>' + error.message + '</pre></div>';
+        setTimeout(function() {
+          if (root.children.length === 1 && root.querySelector('p') && root.querySelector('p').textContent === 'Carregando...') {
+            root.innerHTML = '<div style="padding:20px;color:#f59e0b;font-family:sans-serif;"><h2>App n\u00e3o renderizou</h2><p>Confira se o entry (ex: src/index.jsx) chama ReactDOM.createRoot(document.getElementById(\'root\')).render(&lt;App /&gt;).</p></div>';
+          }
+        }, 2000);
+      } catch (e) {
+        root.innerHTML = '<div style="padding:20px;color:red;font-family:sans-serif;"><h2>Erro</h2><pre>' + (e.message || e) + '</pre></div>';
       }
-    </script>
-  </body>
+    })();
+  <\\/script>
+</body>
 </html>`
 
     return { code: fullHtml }
